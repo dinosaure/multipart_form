@@ -111,11 +111,11 @@ module RAW = struct
     let choose chunk = function
       | true ->
         let chunk = Bytes.sub_string chunk 0 (Bytes.length chunk - 1) in
-        Fmt.epr "END CHUNK: %S.\n%!" chunk ;
+        Fmt.epr "END CHUNK: %S.\n%!" (Bytes.unsafe_to_string chunk) ;
         write_data chunk ; commit
       | false ->
         Bytes.set chunk (Bytes.length chunk - 1) end_of_body.[0] ;
-        Fmt.epr "CHUNK: %S.\n%!" chunk ;
+        Fmt.epr "CHUNK: %S.\n%!" (Bytes.unsafe_to_string chunk) ;
         let chunk =
           if Astring.String.is_suffix ~affix:"\r\n" (Bytes.unsafe_to_string chunk)
           then Bytes.sub_string chunk 0 (Bytes.length chunk - 2)
