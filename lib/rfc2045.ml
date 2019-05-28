@@ -342,7 +342,7 @@ let ty_to_string = function
 let subty ty =
   token
   >>= fun s ->
-    try let v = assert false (* IANA database *) in return (ty, v)
+    try let v = `Iana_token s (* IANA database *) in return (ty, v)
     with Not_found -> match of_string s extension_token with
       | Some v -> return (ty, v)
       | None -> invalid_token s
