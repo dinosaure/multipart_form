@@ -111,7 +111,7 @@ module RAW = struct
     let choose chunk = function
       | true ->
         let chunk = Bytes.sub_string chunk 0 (Bytes.length chunk - 1) in
-        write_line chunk ; commit
+        write_data chunk ; commit
       | false ->
         (* [\r] *)
         peek_char >>= function
