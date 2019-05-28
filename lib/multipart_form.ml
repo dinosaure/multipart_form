@@ -3,6 +3,7 @@ module Rfc2047 = Rfc2047
 module Rfc2046 = Rfc2046
 module Rfc2045 = Rfc2045
 module Rfc822 = Rfc822
+module Field = Field
 
 type 'id t =
   | Contents of 'id
