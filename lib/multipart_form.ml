@@ -114,6 +114,10 @@ module RAW = struct
         write_line chunk ; commit
       | false ->
         Bytes.set chunk (Bytes.length chunk - 1) end_of_body.[0] ;
+        let chunk =
+          if Astring.String.is_suffix ~affix:"\r\n" (Bytes.unsafe_to_string chunk)
+          then Bytes.sub chunk 0 (Bytes.length chunk - 2)
+          else chunk in
         write_line (Bytes.unsafe_to_string chunk) ;
         advance 1 *> m in
 
