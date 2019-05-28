@@ -319,3 +319,6 @@ let parser
         | None -> fail "expected boundary" in
 
     body None fields
+
+let parser ~emitters content_type =
+  parser ~emitters [ Field.Field (Type, content_type) ]
