@@ -99,7 +99,7 @@ end
 module RAW = struct
   open Angstrom
 
-  let parser ~write_line end_of_body =
+  let parser ~write_data end_of_body =
     let check_end_of_body =
       let expected_len = String.length end_of_body in
       Unsafe.peek expected_len
@@ -111,14 +111,14 @@ module RAW = struct
     let choose chunk = function
       | true ->
         let chunk = Bytes.sub_string chunk 0 (Bytes.length chunk - 1) in
-        write_line chunk ; commit
+        write_data chunk ; commit
       | false ->
         Bytes.set chunk (Bytes.length chunk - 1) end_of_body.[0] ;
         let chunk =
           if Astring.String.is_suffix ~affix:"\r\n" (Bytes.unsafe_to_string chunk)
-          then Bytes.sub chunk 0 (Bytes.length chunk - 2)
-          else chunk in
-        write_line (Bytes.unsafe_to_string chunk) ;
+          then Bytes.sub_string chunk 0 (Bytes.length chunk - 2)
+          else Bytes.unsafe_to_string chunk in
+        write_data chunk ;
         advance 1 *> m in
 
     Unsafe.take_while ((<>) end_of_body.[0]) Bigstringaf.substring
@@ -127,9 +127,9 @@ module RAW = struct
     Bytes.blit_string chunk 0 chunk' 0 (String.length chunk) ;
     check_end_of_body >>= choose chunk'
 
-  let with_push ?(end_of_line = "\n") ~push end_of_body =
-    let write_line x = push (Some (x ^ end_of_line)) in
-    parser ~write_line end_of_body
+  let with_push ~push end_of_body =
+    let write_data x = push (Some x) in
+    parser ~write_data end_of_body
 
   let to_end_of_input ~write_data =
     fix @@ fun m ->
