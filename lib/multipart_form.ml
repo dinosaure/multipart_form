@@ -99,7 +99,7 @@ end
 module RAW = struct
   open Angstrom
 
-  let parser ~write_data end_of_body =
+  let parser ~write_data ~write_line end_of_body =
     let check_end_of_body =
       let expected_len = String.length end_of_body in
       Unsafe.peek expected_len
@@ -111,17 +111,24 @@ module RAW = struct
     let choose chunk = function
       | true ->
         let chunk = Bytes.sub_string chunk 0 (Bytes.length chunk - 1) in
-        Fmt.epr "END CHUNK: %S.\n%!" chunk ;
-        write_data chunk ; commit
+        write_line chunk ; commit
       | false ->
-        Bytes.set chunk (Bytes.length chunk - 1) end_of_body.[0] ;
-        Fmt.epr "CHUNK: %S.\n%!" (Bytes.unsafe_to_string chunk) ;
-        let chunk =
-          if Astring.String.is_suffix ~affix:"\r\n" (Bytes.unsafe_to_string chunk)
-          then Bytes.sub_string chunk 0 (Bytes.length chunk - 2)
-          else Bytes.unsafe_to_string chunk in
-        write_data chunk ;
-        advance 1 *> m in
+        (* [\r] *)
+        peek_char >>= function
+        | Some '\r' ->
+          ( advance 1 *> peek_char >>= function
+              | Some '\n' ->
+                let chunk = Bytes.sub_string chunk 0 (Bytes.length chunk - 1) in
+                write_line chunk ;
+                advance 1 *> commit *> m
+              | Some _ | None ->
+                Bytes.set chunk (Bytes.length chunk - 1) end_of_body.[0] ;
+                write_data (Bytes.unsafe_to_string chunk) ;
+                advance 1 *> commit *> m )
+        | Some _ | None ->
+          let chunk = Bytes.sub_string chunk 0 (Bytes.length chunk - 1) in
+          write_data chunk ;
+          commit in
 
     Unsafe.take_while ((<>) end_of_body.[0]) Bigstringaf.substring
     >>= fun chunk ->
@@ -129,25 +136,27 @@ module RAW = struct
     Bytes.blit_string chunk 0 chunk' 0 (String.length chunk) ;
     check_end_of_body >>= choose chunk'
 
-  let with_push ~push end_of_body =
+  let with_push ?(end_of_line = "\n") ~push end_of_body =
     let write_data x = push (Some x) in
-    parser ~write_data end_of_body
+    let write_line x = push (Some (x ^ end_of_line)) in
+    parser ~write_data ~write_line end_of_body
 
-  let to_end_of_input ~write_data =
+  let to_end_of_input ~write_data ~write_line =
     fix @@ fun m ->
-    peek_char >>= function
-    | None -> commit
-    | Some _ ->
-      available >>= fun n -> Unsafe.take n
-        (fun ba ~off ~len ->
-          let chunk = Bytes.create len in
-          Bigstringaf.blit_to_bytes ba ~src_off:off chunk ~dst_off:0 ~len ;
-          write_data (Bytes.unsafe_to_string chunk))
-      >>= fun () -> m
+    take_while ((<>) '\r') >>= fun chunk -> peek_char >>= function
+    | Some '\r' ->
+      ( advance 1 *> peek_char >>= function
+          | Some '\n' ->
+            write_line chunk ; advance 1 *> commit *> m
+          | Some _ | None ->
+            let chunk = chunk ^ "\r" in
+            write_data chunk ; commit *> m )
+    | Some _ | None -> write_data chunk ; commit
 
-  let to_end_of_input_with_push push =
+  let to_end_of_input_with_push ?(end_of_line = "\n")push =
     let write_data x = push (Some x) in
-    to_end_of_input ~write_data
+    let write_line x = push (Some (x ^ end_of_line)) in
+    to_end_of_input ~write_data ~write_line
 end
 
 module QP = struct
