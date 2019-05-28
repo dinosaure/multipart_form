@@ -1,0 +1,26 @@
+opam-version: "2.0"
+name:         "multipart_from"
+maintainer:   "Romain Calascibetta <romain.calascibetta@gmail.com>"
+authors:      "Romain Calascibetta <romain.calascibetta@gmail.com>"
+homepage:     "https://github.com/dinosaure/multipart_form"
+bug-reports:  "https://github.com/dinosaure/multipart_form/issues"
+dev-repo:     "git+https://github.com/dinosaure/multipart_form.git"
+doc:          "https://dinosaure.github.io/multipart_form/"
+license:      "MIT"
+synopsis:     "RFC7578"
+description: """Implementation of RFC7578 in OCaml
+
+Returning Values from Forms: multipart/form-data
+"""
+
+build: [
+  [ "dune" "subst" ]
+  [ "dune" "build" "-p" name "-j" jobs ]
+  [ "dune" "runtest" "-p" name "-j" jobs ] {with-test}
+]
+
+depends: [
+  "ocaml"      {>= "4.03.0"}
+  "dune"       {build}
+  "angstrom"   {>= "0.10.0"}
+]
