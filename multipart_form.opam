@@ -23,4 +23,6 @@ depends: [
   "ocaml"      {>= "4.03.0"}
   "dune"       {build}
   "angstrom"   {>= "0.10.0"}
+  "pecu"
+  "rosetta"
 ]
