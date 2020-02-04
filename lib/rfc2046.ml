@@ -94,6 +94,7 @@ let nothing_to_do = Fmt.kstrf fail "nothing to do"
 let body_part body =
   Rfc2045.headers
   >>= fun fields -> ((Rfc822.crlf *> return `CRLF) <|> (return `Nothing))
+  <* commit
   >>= (function
       | `CRLF -> body fields >>| Option.some
       | `Nothing -> return None)
@@ -103,6 +104,7 @@ let encapsulation boundary body =
   string (make_delimiter boundary)
   *> transport_padding
   *> Rfc822.crlf
+  *> commit
   *> body_part body
 
 (* From RFC 2046:
@@ -123,9 +125,11 @@ let multipart_body ?parent boundary body =
   *> dash_boundary boundary
   *> transport_padding
   *> Rfc822.crlf
+  *> commit
   *> body_part body
   >>= fun x -> many (encapsulation boundary body)
-  >>= fun r -> ((close_delimiter boundary
+  >>= fun r -> ((commit
+                 *> close_delimiter boundary
                  *> transport_padding
                  *> option () (epilogue parent))
                 <|> return ())

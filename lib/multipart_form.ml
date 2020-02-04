@@ -130,7 +130,7 @@ module RAW = struct
           write_data chunk ;
           commit in
 
-    Unsafe.take_while ((<>) end_of_body.[0]) Bigstringaf.substring
+    take_while ((<>) end_of_body.[0])
     >>= fun chunk ->
     let chunk' = Bytes.create (String.length chunk + 1) in
     Bytes.blit_string chunk 0 chunk' 0 (String.length chunk) ;
@@ -274,7 +274,6 @@ let encoding fields =
   let exception Found in
   try List.iter (function Field.Field (Encoding, v) -> encoding := Some v ; raise Found | _ -> ()) fields ; `Bit7
   with Found -> match !encoding with Some v -> v | None -> assert false
-
 
 let octet ~push boundary fields : unit Angstrom.t =
   let open Angstrom in
