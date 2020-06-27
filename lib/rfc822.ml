@@ -971,7 +971,7 @@ let domain_literal =
 *)
 let domain ~address_literal =
   let of_string ~error p s =
-    match parse_string p s with Ok v -> return v | Error _ -> fail error
+    match parse_string ~consume:All p s with Ok v -> return v | Error _ -> fail error
   in
   let literal domain = failf "invalid literal domain: %s" domain in
   (* XXX(dinosaure): according to RFC 5322 and RFC 822 (including RFC 2822), a
