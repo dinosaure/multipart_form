@@ -209,7 +209,7 @@ let failf fmt = Fmt.kstrf fail fmt
 (* RFC5322 *)
 
 let of_string s a =
-  match parse_string a s with Ok v -> Some v | Error _ -> None
+  match parse_string ~consume:All a s with Ok v -> Some v | Error _ -> None
 
 (* From RFC 2045
 

@@ -95,7 +95,7 @@ let value =
   <|> (token >>| fun v -> `Token v)
 
 let of_string s a =
-  match parse_string a s with Ok v -> Some v | Error _ -> None
+  match parse_string ~consume:All a s with Ok v -> Some v | Error _ -> None
 
 let disposition_type =
   token >>= fun s -> match String.lowercase_ascii s with
