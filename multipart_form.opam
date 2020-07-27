@@ -23,4 +23,9 @@ depends: [
   "angstrom"   {>= "0.14.0"}
   "pecu"
   "rosetta"
+  "fmt"
+  "base64"     {>= "3.0.0"}
+  "astring"
+  "rresult"
+  "uutf"
 ]
