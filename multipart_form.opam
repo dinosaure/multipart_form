@@ -6,10 +6,10 @@ bug-reports:  "https://github.com/dinosaure/multipart_form/issues"
 dev-repo:     "git+https://github.com/dinosaure/multipart_form.git"
 doc:          "https://dinosaure.github.io/multipart_form/"
 license:      "MIT"
-synopsis:     "RFC7578"
+synopsis:     "multipart-form: RFC2183, RFC2388 & RFC7578"
 description: """Implementation of RFC7578 in OCaml
 
-Returning Values from Forms: multipart/form-data
+Returning values from forms: multipart/form-data
 """
 
 build: [
@@ -18,9 +18,14 @@ build: [
 ]
 
 depends: [
-  "ocaml"      {>= "4.03.0"}
-  "dune"       {build}
+  "ocaml"      {>= "4.07.0"}
+  "dune"       {>= "2.0.0"}
   "angstrom"   {>= "0.14.0"}
-  "pecu"
-  "rosetta"
+  "base64"
+  "unstrctrd"  {>= "0.2.0"}
+  "rresult"
+  "uutf"
+  "pecu"       {>= "0.4"}
+  "fmt"
+  "alcotest"   {with-test}
 ]

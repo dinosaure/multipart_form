@@ -63,8 +63,8 @@ let content_disposition header =
   List.iter
     (function
       | Field.Field (field_name, Field.Content_disposition, v) ->
-        if Field_name.equal field_name Field_name.content_disposition
-        then disposition := Some v
+          if Field_name.equal field_name Field_name.content_disposition
+          then disposition := Some v
       | _ -> ())
     header ;
   !disposition

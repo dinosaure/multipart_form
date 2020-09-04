@@ -1,0 +1,10 @@
+(executable
+ (name test)
+ (libraries alcotest multipart_form))
+
+(rule
+ (alias runtest)
+ (deps
+  (:test test.exe))
+ (action
+  (run %{test} --color=always)))
