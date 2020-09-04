@@ -25,6 +25,7 @@ depends: [
   "unstrctrd"  {>= "0.2"}
   "rresult"
   "uutf"
+  "stdlib-shims"
   "pecu"       {>= "0.4"}
   "fmt"
   "alcotest"   {with-test}
