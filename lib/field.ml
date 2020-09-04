@@ -21,7 +21,7 @@ let of_field_name : Field_name.t -> witness =
 let parser : type a. a t -> a Angstrom.t = function
   | Content_type -> Content_type.Decoder.content
   | Content_encoding -> Content_encoding.Decoder.mechanism
-  | Content_disposition -> assert false
+  | Content_disposition -> Content_disposition.Decoder.disposition
   | Field _ ->
       let buf = Bytes.create 0x7f in
       Unstrctrd_parser.unstrctrd buf

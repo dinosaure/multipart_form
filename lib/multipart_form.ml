@@ -1,4 +1,7 @@
 module Field = Field
+module Header = Header
+module Content_type = Content_type
+module Content_disposition = Content_disposition
 
 module B64 = struct
   open Angstrom
@@ -119,8 +122,8 @@ module RAW = struct
     Bytes.blit_string chunk 0 chunk' 0 (String.length chunk) ;
     check_end_of_body >>= choose chunk'
 
-  let with_emitter ?(end_of_line = "\n") ~emitter end_of_body =
-    let write_line x = emitter (Some (x ^ end_of_line)) in
+  let with_emitter ~emitter end_of_body =
+    let write_line x = emitter (Some x) in
     parser ~write_line end_of_body
 
   let to_end_of_input ~write_data =

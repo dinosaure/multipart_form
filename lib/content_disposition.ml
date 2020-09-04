@@ -15,6 +15,11 @@ and value = String of string | Token of string
 
 and date = unit
 
+let name t =
+  match List.assoc_opt "name" t.parameters with
+  | Some (String v | Token v) -> Some v
+  | None -> None
+
 let of_escaped_character = function
   | '\x61' -> '\x07' (* "\a" *)
   | '\x62' -> '\x08' (* "\b" *)

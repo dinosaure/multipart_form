@@ -58,6 +58,17 @@ let content_encoding header =
     header ;
   !mechanism
 
+let content_disposition header =
+  let disposition : Content_disposition.t option ref = ref None in
+  List.iter
+    (function
+      | Field.Field (field_name, Field.Content_disposition, v) ->
+        if Field_name.equal field_name Field_name.content_disposition
+        then disposition := Some v
+      | _ -> ())
+    header ;
+  !disposition
+
 module Decoder = struct
   open Angstrom
 
