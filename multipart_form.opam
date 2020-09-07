@@ -28,5 +28,6 @@ depends: [
   "stdlib-shims"
   "pecu"       {>= "0.4"}
   "fmt"
+  "ke"         {>= "0.4"}
   "alcotest"   {with-test}
 ]
