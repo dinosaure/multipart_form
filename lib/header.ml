@@ -52,7 +52,7 @@ let content_encoding header =
   List.iter
     (function
       | Field.Field (field_name, Field.Content_encoding, v) ->
-          if Field_name.equal field_name Field_name.content_encoding
+          if Field_name.equal field_name Field_name.content_transfer_encoding
           then mechanism := v
       | _ -> ())
     header ;

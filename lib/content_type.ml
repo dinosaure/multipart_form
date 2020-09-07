@@ -596,3 +596,13 @@ module Decoder = struct
     many (skip_while is_wsp *> char ';' *> skip_while is_wsp *> parameter)
     >>| fun parameters -> { ty; subty; parameters }
 end
+
+let of_string str =
+  let open Rresult in
+  Unstrctrd.of_string str
+  >>| (fun (_, v) -> Unstrctrd.fold_fws v)
+  >>| Unstrctrd.to_utf_8_string
+  >>= fun str ->
+  match Angstrom.parse_string ~consume:All Decoder.content str with
+  | Ok v -> Ok v
+  | Error _ -> R.error_msgf "Invalid (unfolded) Content-Type value: %S" str

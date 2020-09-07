@@ -67,6 +67,6 @@ module Set = Set.Make (String)
 
 let content_type = "Content-Type"
 
-let content_encoding = "Content-Transfer-Encoding"
+let content_transfer_encoding = "Content-Transfer-Encoding"
 
 let content_disposition = "Content-Disposition"

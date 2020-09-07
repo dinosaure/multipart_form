@@ -1,8 +1,9 @@
 open Stdlib
-
+module Field_name = Field_name
 module Field = Field
 module Header = Header
 module Content_type = Content_type
+module Content_encoding = Content_encoding
 module Content_disposition = Content_disposition
 
 module B64 = struct
@@ -342,3 +343,56 @@ let parser : emitters:'id emitters -> Field.field list -> 'id t Angstrom.t =
 let parser ~emitters content_type =
   parser ~emitters
     [ Field.Field (Field_name.content_type, Field.Content_type, content_type) ]
+
+type 'a stream = unit -> 'a option
+
+let blit src src_off dst dst_off len =
+  Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
+
+let of_stream stream content_type =
+  let gen =
+    let v = ref (-1) in
+    fun () ->
+      incr v ;
+      !v in
+  let tbl = Hashtbl.create 0x10 in
+  let emitters _header =
+    let idx = gen () in
+    let buf = Buffer.create 0x100 in
+    Hashtbl.add tbl idx buf ;
+    ((function Some str -> Buffer.add_string buf str | None -> ()), idx) in
+  let parser = parser ~emitters content_type in
+  let module Ke = Ke.Rke in
+  let ke = Ke.create ~capacity:0x1000 Bigarray.Char in
+  let rec go = function
+    | Angstrom.Unbuffered.Done (_, m) ->
+        let assoc =
+          Hashtbl.fold (fun k b a -> (k, Buffer.contents b) :: a) tbl [] in
+        Ok (m, assoc)
+    | Fail _ -> Error (`Msg "Invalid input")
+    | Partial { committed; continue } -> (
+        Ke.N.shift_exn ke committed ;
+        if committed = 0 then Ke.compress ke ;
+        match stream () with
+        | Some str ->
+            (* TODO: [""] *)
+            Ke.N.push ke ~blit ~length:String.length ~off:0
+              ~len:(String.length str) str ;
+            let[@warning "-8"] (slice :: _) = Ke.N.peek ke in
+            go
+              (continue slice ~off:0 ~len:(Bigstringaf.length slice) Incomplete)
+        | None ->
+            let[@warning "-8"] (slice :: _) = Ke.N.peek ke in
+            go (continue slice ~off:0 ~len:(Bigstringaf.length slice) Complete))
+  in
+  go (Angstrom.Unbuffered.parse parser)
+
+let of_string str content_type =
+  let consumed = ref false in
+  let stream () =
+    if !consumed
+    then None
+    else (
+      consumed := true ;
+      Some str) in
+  of_stream stream content_type

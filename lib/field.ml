@@ -4,7 +4,7 @@ type 'a t =
   | Content_type : Content_type.t t
   | Content_encoding : Content_encoding.t t
   | Content_disposition : Content_disposition.t t
-  | Field : Field_name.t -> Unstrctrd.t t
+  | Field : Unstrctrd.t t
 
 type witness = Witness : 'a t -> witness
 
@@ -18,13 +18,13 @@ let of_field_name : Field_name.t -> witness =
   | "content-type" -> Witness Content_type
   | "content-transfer-encoding" -> Witness Content_encoding
   | "content-disposition" -> Witness Content_disposition
-  | v -> Witness (Field v)
+  | _ -> Witness Field
 
 let parser : type a. a t -> a Angstrom.t = function
   | Content_type -> Content_type.Decoder.content
   | Content_encoding -> Content_encoding.Decoder.mechanism
   | Content_disposition -> Content_disposition.Decoder.disposition
-  | Field _ ->
+  | Field ->
       let buf = Bytes.create 0x7f in
       Unstrctrd_parser.unstrctrd buf
 
@@ -53,5 +53,5 @@ module Decoder = struct
       >>| fun v -> Field (field_name, w, v) in
     match res with
     | Ok v -> return v
-    | Error _ -> return (Field (field_name, Field field_name, v))
+    | Error _ -> return (Field (field_name, Field, v))
 end

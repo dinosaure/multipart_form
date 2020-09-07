@@ -1,5 +1,5 @@
 (library
  (name multipart_form)
  (public_name multipart_form)
- (libraries unstrctrd unstrctrd.parser base64 base64.rfc2045 pecu rresult
-   uutf fmt angstrom))
+ (libraries ke stdlib-shims unstrctrd unstrctrd.parser base64 base64.rfc2045
+   pecu rresult uutf fmt angstrom))

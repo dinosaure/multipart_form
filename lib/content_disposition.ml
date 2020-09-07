@@ -20,6 +20,12 @@ let name t =
   | Some (String v | Token v) -> Some v
   | None -> None
 
+let filename { filename; _ } = filename
+
+let size { size; _ } = size
+
+let disposition_type { ty; _ } = ty
+
 let of_escaped_character = function
   | '\x61' -> '\x07' (* "\a" *)
   | '\x62' -> '\x08' (* "\b" *)

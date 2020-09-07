@@ -1,6 +1,6 @@
 version=0.15.0
 break-infix = fit-or-vertical
-parse-docstrings = true
+parse-docstrings = false
 indicate-multiline-delimiters=no
 nested-match=align
 sequence-style=separator
