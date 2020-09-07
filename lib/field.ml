@@ -1,52 +1,57 @@
-type discrete = [`Text | `Image | `Audio | `Video | `Application]
-type composite = [`Multipart]
-type extension = [`Ietf_token of string | `X_token of string]
-type ty = [discrete | composite | extension]
-type subty = [`Ietf_token of string | `Iana_token of string | `X_token of string]
-type value = [`String of string | `Token of string]
-type disposition_type = [`Inline | `Attachment | `Ietf_token of string | `X_token of string]
-type date = unit
-
-type content_encoding =
-  [ `Bit7
-  | `Bit8
-  | `Binary
-  | `Quoted_printable
-  | `Base64
-  | `Ietf_token of string
-  | `X_token of string ]
-
-type unstructured =
-  [ `Text of string
-  | `CR of int
-  | `LF of int
-  | `CRLF
-  | `WSP of string
-  | `Encoded of Rfc2047.encoded_word ]
-  list
-
-type content_type = {ty: ty; subty: subty; parameters: (string * value) list}
-type content_disposition =
-  { ty: disposition_type
-  ; filename: string option
-  ; creation: date option
-  ; modification: date option
-  ; read: date option
-  ; size: int option
-  ; parameters: (string * value) list}
+open Stdlib
 
 type 'a t =
-  | Type : content_type t
-  | Encoding : content_encoding t
-  | Disposition : content_disposition t
-  | Field : Field_name.t -> unstructured t
+  | Content_type : Content_type.t t
+  | Content_encoding : Content_encoding.t t
+  | Content_disposition : Content_disposition.t t
+  | Field : Unstrctrd.t t
 
-type 'a v =
-  | Type : content_type v
-  | Encoding : content_encoding v
-  | Disposition : content_disposition v
-  | Unstructured : unstructured v
+type witness = Witness : 'a t -> witness
 
-type field_name = Field_name : 'a t -> field_name
-type field_value = Field_value : 'a v -> field_value
-type field = Field : 'a t * 'a -> field
+type field = Field : Field_name.t * 'a t * 'a -> field
+
+let ( <.> ) f g x = f (g x)
+
+let of_field_name : Field_name.t -> witness =
+ fun field_name ->
+  match String.lowercase_ascii (field_name :> string) with
+  | "content-type" -> Witness Content_type
+  | "content-transfer-encoding" -> Witness Content_encoding
+  | "content-disposition" -> Witness Content_disposition
+  | _ -> Witness Field
+
+let parser : type a. a t -> a Angstrom.t = function
+  | Content_type -> Content_type.Decoder.content
+  | Content_encoding -> Content_encoding.Decoder.mechanism
+  | Content_disposition -> Content_disposition.Decoder.disposition
+  | Field ->
+      let buf = Bytes.create 0x7f in
+      Unstrctrd_parser.unstrctrd buf
+
+module Decoder = struct
+  open Angstrom
+
+  let field ?g field_name =
+    let buf = Bytes.create 0x7f in
+    (* XXX(dinosaure): fast allocation. *)
+    Unstrctrd_parser.unstrctrd buf >>= fun v ->
+    let (Witness w) =
+      match Option.bind g (Field_name.Map.find_opt field_name) with
+      | None -> of_field_name field_name
+      | Some w -> w in
+    let parser = parser w in
+    let res =
+      let open Rresult in
+      Unstrctrd.without_comments v
+      >>| Unstrctrd.fold_fws
+      >>| Unstrctrd.to_utf_8_string
+      (* XXX(dinosaure): normalized value can have trailing whitespace
+       * such as "value (comment)" returns "value ". Given parser can
+       * ignore it (and it does not consume all inputs finally). *)
+      >>= (R.reword_error R.msg
+          <.> (parse_string ~consume:Consume.Prefix) parser)
+      >>| fun v -> Field (field_name, w, v) in
+    match res with
+    | Ok v -> return v
+    | Error _ -> return (Field (field_name, Field, v))
+end
