@@ -1,5 +1,7 @@
 type t = Field.field list
 
+let pp = Fmt.(list ~sep:(always "@\n") Field.pp)
+
 let assoc field_name header =
   let f acc (Field.Field (field_name', _, _) as field) =
     if Field_name.equal field_name field_name' then field :: acc else acc in

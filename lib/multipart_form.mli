@@ -28,6 +28,8 @@ module Field_name : sig
   val content_transfer_encoding : t
 
   val content_disposition : t
+
+  val pp : t Fmt.t
 end
 
 module Content_type : sig
@@ -41,11 +43,15 @@ module Content_type : sig
       | `Multipart
       | `Ietf_token of string
       | `X_token of string ]
+
+    val pp : t Fmt.t
   end
 
   module Subtype : sig
     type t =
       [ `Ietf_token of string | `Iana_token of string | `X_token of string ]
+
+    val pp : t Fmt.t
   end
 
   module Parameters : sig
@@ -56,6 +62,8 @@ module Content_type : sig
     type value = String of string | Token of string
 
     type t = value Map.t
+
+    val pp : t Fmt.t
   end
 
   type t = {
@@ -63,6 +71,8 @@ module Content_type : sig
     subty : Subtype.t;
     parameters : (string * Parameters.value) list;
   }
+
+  val pp : t Fmt.t
 
   val of_string : string -> (t, [> `Msg of string ]) result
 end
@@ -76,6 +86,8 @@ module Content_encoding : sig
     | `Base64
     | `Ietf_token of string
     | `X_token of string ]
+
+  val pp : t Fmt.t
 end
 
 module Content_disposition : sig
@@ -89,6 +101,8 @@ module Content_disposition : sig
   val filename : t -> string option
 
   val size : t -> int option
+
+  val pp : t Fmt.t
 end
 
 module Field : sig
@@ -151,6 +165,8 @@ module Header : sig
   val content_disposition : t -> Content_disposition.t option
   (** [content_disposition] returns the {!Content_disposition} value of [header]
      if it exists. *)
+
+  val pp : t Fmt.t
 
   module Decoder : sig
     val header : t Angstrom.t
