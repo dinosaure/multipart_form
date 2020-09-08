@@ -15,6 +15,33 @@ and value = String of string | Token of string
 
 and date = unit
 
+let pp_disposition_type ppf = function
+  | `Inline -> Fmt.string ppf "inline"
+  | `Attachment -> Fmt.string ppf "attachment"
+  | `Ietf_token v -> Fmt.pf ppf "<ietf:%s>" v
+  | `X_token v -> Fmt.pf ppf "X-%s" v
+
+let pp_value ppf = function
+  | String v -> Fmt.pf ppf "%S" v
+  | Token v -> Fmt.string ppf v
+
+let pp ppf t =
+  Fmt.pf ppf "{ @[<hov>type= %a;@ \
+                       filename= %a;@ \
+                       creation= %a;@ \
+                       modification= %a;@ \
+                       read= %a;@ \
+                       size= %a;@ \
+                       parameters= @[<hov>%a@];@] }"
+    pp_disposition_type t.ty
+    Fmt.(option string) t.filename
+    Fmt.(option (unit "#date")) t.creation
+    Fmt.(option (unit "#date")) t.modification
+    Fmt.(option (unit "#date")) t.read
+    Fmt.(option int) t.size
+    Fmt.(Dump.iter_bindings (fun f -> List.iter (fun (k, v) -> f k v)) (always "parameters") 
+           string pp_value) t.parameters
+
 let name t =
   match List.assoc_opt "name" t.parameters with
   | Some (String v | Token v) -> Some v

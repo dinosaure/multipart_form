@@ -10,6 +10,17 @@ type witness = Witness : 'a t -> witness
 
 type field = Field : Field_name.t * 'a t * 'a -> field
 
+let pp_unstrctrd ppf v =
+  Fmt.string ppf (Unstrctrd.to_utf_8_string v)
+
+let pp ppf (Field (field_name, w, v)) =
+  let of_witness : type a. a t -> a Fmt.t = function
+    | Content_type -> Content_type.pp
+    | Content_encoding -> Content_encoding.pp
+    | Content_disposition -> Content_disposition.pp
+    | Field -> pp_unstrctrd in
+  Fmt.pf ppf "%a: @[<hov>%a@]" Field_name.pp field_name (of_witness w) v
+
 let ( <.> ) f g x = f (g x)
 
 let of_field_name : Field_name.t -> witness =
