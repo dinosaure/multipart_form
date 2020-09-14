@@ -6,7 +6,7 @@ bug-reports:  "https://github.com/dinosaure/multipart_form/issues"
 dev-repo:     "git+https://github.com/dinosaure/multipart_form.git"
 doc:          "https://dinosaure.github.io/multipart_form/"
 license:      "MIT"
-synopsis:     "multipart-form: RFC2183, RFC2388 & RFC7578"
+synopsis:     "Multipart-form: RFC2183, RFC2388 & RFC7578"
 description: """Implementation of RFC7578 in OCaml
 
 Returning values from forms: multipart/form-data
