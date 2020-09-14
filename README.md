@@ -50,3 +50,7 @@ A use of `Lwt_stream.create` can gives you such required value.
 This library was done for my personal use and I probably missed some useful
 elements for a basic user who wants to process a `multipart/form-data` document.
 So, feel free to make an issue if you think that something is missed.
+
+[cohttp]: https://github.com/mirage/ocaml-cohttp
+[httpaf]: https://github.com/inhabitedtype/httpaf
+[angstrom]: https://github.com/inhabitedtype/angstrom
