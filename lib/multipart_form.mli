@@ -212,7 +212,7 @@ val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
                 | Some str -> Buffer.add_string buf str), idx in
       parser ~emitters content_type ]}
 
-    With such style, a mapping exists between the returned value {!t) and [tbl].
+    With such style, a mapping exists between the returned value {!t} and [tbl].
    At the end, the user is able to extract contents with these values.
 
     In some contexts, something else such as an [Lwt_stream.t]/asynchronous
