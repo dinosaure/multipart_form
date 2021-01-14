@@ -62,6 +62,12 @@ module Decoder = struct
   let field_name = take_while1 is_ftext
 end
 
+module Encoder = struct
+  open Prettym
+
+  let field_name = using capitalize string
+end
+
 module Map = Map.Make (String)
 module Set = Set.Make (String)
 

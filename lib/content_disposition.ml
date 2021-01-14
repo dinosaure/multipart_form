@@ -15,6 +15,17 @@ and value = String of string | Token of string
 
 and date = unit
 
+let v ?filename ?(kind = `Ietf_token "form-data") ?size name =
+  {
+    ty = kind;
+    filename;
+    creation = None;
+    modification = None;
+    read = None;
+    size;
+    parameters = [ ("name", String name) ];
+  }
+
 let pp_disposition_type ppf = function
   | `Inline -> Fmt.string ppf "inline"
   | `Attachment -> Fmt.string ppf "attachment"
@@ -26,21 +37,25 @@ let pp_value ppf = function
   | Token v -> Fmt.string ppf v
 
 let pp ppf t =
-  Fmt.pf ppf "{ @[<hov>type= %a;@ \
-                       filename= %a;@ \
-                       creation= %a;@ \
-                       modification= %a;@ \
-                       read= %a;@ \
-                       size= %a;@ \
-                       parameters= @[<hov>%a@];@] }"
+  Fmt.pf ppf
+    "{ @[<hov>type= %a;@ filename= %a;@ creation= %a;@ modification= %a;@ \
+     read= %a;@ size= %a;@ parameters= @[<hov>%a@];@] }"
     pp_disposition_type t.ty
-    Fmt.(option string) t.filename
-    Fmt.(option (unit "#date")) t.creation
-    Fmt.(option (unit "#date")) t.modification
-    Fmt.(option (unit "#date")) t.read
-    Fmt.(option int) t.size
-    Fmt.(Dump.iter_bindings (fun f -> List.iter (fun (k, v) -> f k v)) (always "parameters") 
-           string pp_value) t.parameters
+    Fmt.(option string)
+    t.filename
+    Fmt.(option (unit "#date"))
+    t.creation
+    Fmt.(option (unit "#date"))
+    t.modification
+    Fmt.(option (unit "#date"))
+    t.read
+    Fmt.(option int)
+    t.size
+    Fmt.(
+      Dump.iter_bindings
+        (fun f -> List.iter (fun (k, v) -> f k v))
+        (always "parameters") string pp_value)
+    t.parameters
 
 let name t =
   match List.assoc_opt "name" t.parameters with
@@ -318,7 +333,8 @@ module Decoder = struct
               a
           | Size v ->
               size := Some v ;
-              a | Parameter v -> v :: a)
+              a
+          | Parameter v -> v :: a)
         [] parameters in
     return
       {
@@ -330,4 +346,72 @@ module Decoder = struct
         size = !size;
         parameters;
       }
+end
+
+module Encoder = struct
+  open Prettym
+
+  let disposition_type ppf = function
+    | `Attachment -> eval ppf [ string $ "attachment" ]
+    | `Inline -> eval ppf [ string $ "inline" ]
+    | `Ietf_token v -> eval ppf [ !!string ] v
+    | `X_token v -> eval ppf [ string $ "X-"; !!string ] v
+
+  let token ppf str = eval ppf [ !!string ] str
+
+  (* TODO(dinosaure): unsafe token. *)
+
+  let value ppf = function
+    | Token v -> token ppf v
+    | String v -> eval ppf [ char $ '"'; !!string; char $ '"' ] v
+
+  type 'a param =
+    | Filename : string param
+    | Creation : date param
+    | Modification : date param
+    | Read : date param
+    | Size : int param
+    | Parameter : (string * value) param
+
+  type v = V : ('a param * 'a option) -> v
+
+  let disposition_parm : v Prettym.t =
+   fun ppf (V v) ->
+    match v with
+    | Filename, Some v ->
+        eval ppf
+          [ string $ "filename"; cut; char $ '='; !!token; char $ ';'; fws ]
+          v
+    | Filename, None -> ppf
+    | Creation, _ -> ppf
+    | Modification, _ -> ppf
+    | Read, _ -> ppf
+    | Size, Some v ->
+        eval ppf
+          [ string $ "size"; cut; char $ '='; !!string; char $ ';'; fws ]
+          (string_of_int v)
+    | Size, None -> ppf
+    | Parameter, Some (k, v) ->
+        eval ppf [ !!string; cut; char $ '='; !!value; char $ ';'; fws ] k v
+    | Parameter, None -> ppf
+
+  let disposition ppf v =
+    let sep ppf () = eval ppf [ cut ] in
+    eval ppf
+      [
+        !!disposition_type;
+        cut;
+        char $ ';';
+        fws;
+        !!(list ~sep:(sep, ()) disposition_parm);
+      ]
+      v.ty
+      ([
+         V (Filename, v.filename);
+         V (Creation, v.creation);
+         V (Modification, v.modification);
+         V (Read, v.read);
+         V (Size, v.size);
+       ]
+      @ List.map (fun (k, v) -> V (Parameter, Some (k, v))) v.parameters)
 end

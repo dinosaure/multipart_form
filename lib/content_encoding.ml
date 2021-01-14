@@ -124,6 +124,8 @@ module Decoder = struct
     | Some 'X' | Some 'x' -> x_token >>| fun v -> `X_token v
     | _ -> ietf_token >>| fun v -> `Ietf_token v
 
+  let is_wsp = function ' ' | '\t' -> true | _ -> false
+
   (* From RFC 2045
 
           mechanism := "7bit" / "8bit" / "binary" /
@@ -137,7 +139,7 @@ module Decoder = struct
         Content-Transfer-Encoding header field is not present.
   *)
   let mechanism =
-    token >>= fun s ->
+    skip_while is_wsp *> token <* skip_while is_wsp >>= fun s ->
     (* XXX(dinosaure): lowercase_*ascii* is fine, not utf8 in this part. *)
     match String.lowercase_ascii s with
     | "7bit" -> return `Bit7
@@ -149,4 +151,17 @@ module Decoder = struct
     match of_string s extension_token with
     | Some v -> return v
     | None -> invalid_token s
+end
+
+module Encoder = struct
+  open Prettym
+
+  let mechanism ppf = function
+    | `Bit7 -> string ppf "7bit"
+    | `Bit8 -> string ppf "8bit"
+    | `Binary -> string ppf "binary"
+    | `Quoted_printable -> string ppf "quoted-printable"
+    | `Base64 -> string ppf "base64"
+    | `Ietf_token x -> string ppf x
+    | `X_token x -> eval ppf [ string $ "X-"; !!string ] x
 end

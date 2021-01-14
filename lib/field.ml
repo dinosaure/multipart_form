@@ -10,8 +10,7 @@ type witness = Witness : 'a t -> witness
 
 type field = Field : Field_name.t * 'a t * 'a -> field
 
-let pp_unstrctrd ppf v =
-  Fmt.string ppf (Unstrctrd.to_utf_8_string v)
+let pp_unstrctrd ppf v = Fmt.string ppf (Unstrctrd.to_utf_8_string v)
 
 let pp ppf (Field (field_name, w, v)) =
   let of_witness : type a. a t -> a Fmt.t = function
@@ -19,7 +18,10 @@ let pp ppf (Field (field_name, w, v)) =
     | Content_encoding -> Content_encoding.pp
     | Content_disposition -> Content_disposition.pp
     | Field -> pp_unstrctrd in
-  Fmt.pf ppf "%a: @[<hov>%a@]" Field_name.pp field_name (of_witness w) v
+  let is_unstructured = match w with Field -> true | _ -> false in
+  Fmt.pf ppf "%a[%c]: @[<hov>%a@]" Field_name.pp field_name
+    (if is_unstructured then '!' else '*')
+    (of_witness w) v
 
 let ( <.> ) f g x = f (g x)
 
@@ -65,4 +67,31 @@ module Decoder = struct
     match res with
     | Ok v -> return v
     | Error _ -> return (Field (field_name, Field, v))
+end
+
+let encoder : type a. a t -> a Prettym.t = function
+  | Content_type -> Content_type.Encoder.content_type
+  | Content_encoding -> Content_encoding.Encoder.mechanism
+  | Content_disposition -> Content_disposition.Encoder.disposition
+  | Field -> assert false
+
+(* TODO *)
+
+module Encoder = struct
+  open Prettym
+
+  let field ppf field =
+    let (Field (field_name, w, v)) = field in
+    let e = encoder w in
+    eval ppf
+      [
+        tbox 1;
+        !!Field_name.Encoder.field_name;
+        string $ ":";
+        spaces 1;
+        !!e;
+        close;
+        new_line;
+      ]
+      field_name v
 end

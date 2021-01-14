@@ -82,3 +82,13 @@ module Decoder = struct
 
   let header = many field
 end
+
+module Encoder = struct
+  include Prettym
+
+  let noop = ((fun ppf () -> ppf), ())
+
+  let field ppf x = Field.Encoder.field ppf x
+
+  let header ppf x = (list ~sep:noop field) ppf x
+end

@@ -103,6 +103,13 @@ module Content_disposition : sig
   val size : t -> int option
 
   val pp : t Fmt.t
+
+  val v :
+    ?filename:string ->
+    ?kind:[ `Inline | `Attachment | `Ietf_token of string | `X_token of string ] ->
+    ?size:int ->
+    string ->
+    t
 end
 
 module Field : sig
@@ -233,3 +240,24 @@ val of_string :
   (int t * (int * string) list, [> `Msg of string ]) result
 (** [of_string str content_type] returns, if it succeeds, a value {!t} with an
    associative list of unique ID and contents. *)
+
+type part
+
+val part :
+  ?header:Header.t ->
+  ?disposition:Content_disposition.t ->
+  ?encoding:Content_encoding.t ->
+  (string * int * int) stream ->
+  part
+
+type multipart
+
+val multipart :
+  rng:(?g:'g -> int -> string) ->
+  ?g:'g ->
+  ?header:Header.t ->
+  ?boundary:string ->
+  part list ->
+  multipart
+
+val to_stream : multipart -> Header.t * (string * int * int) stream
