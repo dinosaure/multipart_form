@@ -148,6 +148,69 @@ let simple_with_helpers =
         "file2" (List.assoc "file2" m) "Content of a.txt.\n"
   | Error (`Msg err) -> Alcotest.fail err
 
+let stream_of_string x =
+  let once = ref false in
+  let go () =
+    if !once
+    then None
+    else (
+      once := true ;
+      Some (x, 0, String.length x)) in
+  go
+
+let random_string len =
+  let res = Bytes.create len in
+  for i = 0 to len - 1 do
+    let code = Random.int (10 + 26 + 26) in
+    if code < 10
+    then Bytes.set res i (Char.chr (Char.code '0' + code))
+    else if code < 10 + 16
+    then Bytes.set res i (Char.chr (Char.code 'a' + code - 10))
+    else Bytes.set res i (Char.chr (Char.code 'A' + code - (10 + 26)))
+  done ;
+  Bytes.unsafe_to_string res
+
+let string_of_stream s =
+  let buf = Buffer.create 0x100 in
+  let rec go () =
+    match s () with
+    | None -> Buffer.contents buf
+    | Some (str, off, len) ->
+        Buffer.add_substring buf str off len ;
+        go () in
+  go ()
+
+let make_simple_multipart =
+  Alcotest.test_case "simple" `Quick @@ fun () ->
+  let open Multipart_form in
+  let part0 =
+    part
+      ~disposition:(Content_disposition.v ~filename:"a.html" "file1")
+      ~encoding:`Base64
+      (stream_of_string "<!DOCTYPE html><title>Content of a.html.</title>\n")
+  in
+  let part1 =
+    part
+      ~disposition:(Content_disposition.v ~filename:"a.txt" "file2")
+      (stream_of_string "Content of a.txt.\n") in
+  let t = multipart ~rng:(fun ?g:_ len -> random_string len) [ part0; part1 ] in
+  let header, stream = to_stream t in
+  let str = string_of_stream stream in
+  match of_string str (Header.content_type header) with
+  | Ok (m, assoc) ->
+      let m, _ = to_map ~assoc m in
+      let m = Map.bindings m in
+      Alcotest.(check string)
+        "file1" (List.assoc "file1" m)
+        "<!DOCTYPE html><title>Content of a.html.</title>\n" ;
+      Alcotest.(check string)
+        "file2" (List.assoc "file2" m) "Content of a.txt.\n"
+  | Error (`Msg err) -> Alcotest.fail err
+
 let () =
   Alcotest.run "multipart_form"
-    [ ("multipart_form", [ simple_multipart_form; simple_with_helpers ]) ]
+    [
+      ( "multipart_form (decoder)",
+        [ simple_multipart_form; simple_with_helpers ] );
+      ("multipart_form (encoder)", [ make_simple_multipart ]);
+    ]

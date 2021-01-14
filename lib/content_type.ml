@@ -200,7 +200,7 @@ module Parameters = struct
         String.iter
           (fun chr -> if not (is_token chr) then raise Invalid_token)
           x ;
-        Ok (`Token x)
+        Ok (Token x)
       with Invalid_token ->
         Rresult.R.error_msgf "Value %S does not respect standards" v in
 
@@ -234,7 +234,8 @@ module Parameters = struct
     let utf_8 x =
       try
         Uutf.String.fold_utf_8
-          (fun () _pos -> function `Malformed _ -> raise Invalid_utf_8
+          (fun () _pos -> function
+            | `Malformed _ -> raise Invalid_utf_8
             | `Uchar _ -> ())
           () x ;
         Ok x
@@ -257,7 +258,7 @@ module Parameters = struct
            However, order is really important semantically. UTF-8 -> escape
            expects a special process to decoder (escape -> UTF-8). About history,
            unicorn and so on, it should be the best to keep this order. *)
-        Rresult.R.(utf_8 v >>| escape_characters >>| fun x -> `String x)
+        Rresult.R.(utf_8 v >>| escape_characters >>| fun x -> String x)
 
   let value_exn x =
     match value x with Ok v -> v | Error (`Msg err) -> invalid_arg err
@@ -606,3 +607,57 @@ let of_string str =
   match Angstrom.parse_string ~consume:All Decoder.content str with
   | Ok v -> Ok v
   | Error _ -> R.error_msgf "Invalid (unfolded) Content-Type value: %S" str
+
+module Encoder = struct
+  open Prettym
+
+  let ty ppf = function
+    | `Text -> string ppf "text"
+    | `Image -> string ppf "image"
+    | `Audio -> string ppf "audio"
+    | `Video -> string ppf "video"
+    | `Application -> string ppf "application"
+    | `Message -> string ppf "message"
+    | `Multipart -> string ppf "multipart"
+    | `Ietf_token v -> string ppf v
+    | `X_token v -> using (fun v -> "X-" ^ v) string ppf v
+
+  let subty ppf = function
+    | `Ietf_token v -> string ppf v
+    | `Iana_token v -> string ppf v
+    | `X_token v -> using (fun v -> "X-" ^ v) string ppf v
+
+  let value ppf = function
+    | Parameters.Token x -> eval ppf [ !!string ] x
+    | Parameters.String x -> eval ppf [ char $ '"'; !!string; char $ '"' ] x
+
+  let parameter ppf (key, v) =
+    eval ppf [ box; !!string; cut; char $ '='; cut; !!value; close ] key v
+
+  let parameters ppf parameters =
+    let sep ppf () = eval ppf [ char $ ';'; fws ] in
+    eval ppf [ box; !!(list ~sep:(sep, ()) parameter); close ] parameters
+
+  let content_type ppf t =
+    match t.parameters with
+    | [] ->
+        eval ppf
+          [ bbox; !!ty; cut; char $ '/'; cut; !!subty; close ]
+          t.ty t.subty
+    | _ ->
+        eval ppf
+          [
+            bbox;
+            !!ty;
+            cut;
+            char $ '/';
+            cut;
+            !!subty;
+            cut;
+            char $ ';';
+            fws;
+            !!parameters;
+            close;
+          ]
+          t.ty t.subty t.parameters
+end
