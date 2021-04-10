@@ -201,6 +201,8 @@ type 'a elt = { header : Header.t; body : 'a }
        indeed, we can have a multipart inside a multipart.}} *)
 type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
+val map : ('a -> 'b) -> 'a t -> 'b t
+
 val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
 (** [parser ~emitters content_type] creates an [angstrom]'s parser which can
    process a [multipart/form-data] input. For each [Leaf], the parser calls

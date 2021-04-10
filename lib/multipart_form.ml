@@ -269,6 +269,11 @@ type 'a elt = { header : Header.t; body : 'a }
 
 type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
+let rec map f = function
+  | Leaf { header; body } -> Leaf { header; body = f body }
+  | Multipart { header ; body } ->
+    Multipart { header ; body = List.map (Option.map (map f)) body }
+
 let iter ~f buf ~off ~len =
   for i = off to len - 1 do
     f buf.[i]
@@ -554,46 +559,49 @@ let multipart ~rng ?g ?(header = Header.empty) ?boundary parts =
   { header; parts }
 
 (* stream helpers *)
+module Stream = struct
 
-let none () = None
+  let none () = None
 
-let map f stream =
-  let go () = match stream () with Some v -> Some (f v) | None -> None in
-  go
+  let map f stream =
+    let go () = match stream () with Some v -> Some (f v) | None -> None in
+    go
 
-let stream_of_string x =
-  let once = ref false in
-  let go () =
-    if !once
-    then None
-    else (
-      once := true ;
-      Some (x, 0, String.length x)) in
-  go
+  let of_string x =
+    let once = ref false in
+    let go () =
+      if !once
+      then None
+      else (
+        once := true ;
+        Some (x, 0, String.length x)) in
+    go
 
-let crlf () = stream_of_string "\r\n"
+  let crlf () = of_string "\r\n"
 
-let concat s0 s1 =
-  let c = ref s0 in
-  let rec go () =
-    match !c () with
-    | Some x -> Some x
-    | None ->
-        if !c == s0
-        then (
-          c := s1 ;
-          go ())
-        else None in
-  go
+  let concat s0 s1 =
+    let c = ref s0 in
+    let rec go () =
+      match !c () with
+      | Some x -> Some x
+      | None ->
+          if !c == s0
+          then (
+            c := s1 ;
+            go ())
+          else None in
+    go
 
-let ( @ ) a b = concat a b
+  let ( @ ) a b = concat a b
 
-let stream_of_part { header; body } =
-  let content_stream =
-    map
-      (fun s -> (s, 0, String.length s))
-      (Prettym.to_stream Header.Encoder.header header) in
-  content_stream @ crlf () @ body
+  let of_part { header; body } =
+    let content_stream =
+      map
+        (fun s -> (s, 0, String.length s))
+        (Prettym.to_stream Header.Encoder.header header) in
+    content_stream @ crlf () @ body
+
+end
 
 let to_stream : multipart -> Header.t * (string * int * int) stream =
  fun { header; parts } ->
@@ -607,10 +615,10 @@ let to_stream : multipart -> Header.t * (string * int * int) stream =
   let closer = Rfc2046.make_close_delimiter boundary ^ "\r\n" in
 
   let rec go stream = function
-    | [] -> none
-    | [ x ] -> stream @ stream_of_part x @ stream_of_string closer
+    | [] -> Stream.none
+    | [ x ] -> Stream.(stream @ of_part x @ of_string closer)
     | x :: r ->
-        let stream = stream @ stream_of_part x @ stream_of_string inner in
+        let stream = Stream.(stream @ of_part x @ of_string inner) in
         go stream r in
 
-  (header, go (stream_of_string beginner) parts)
+  (header, go (Stream.of_string beginner) parts)
