@@ -202,6 +202,7 @@ type 'a elt = { header : Header.t; body : 'a }
 type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
 val map : ('a -> 'b) -> 'a t -> 'b t
+
 val flatten : 'a t -> 'a elt list
 
 val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
@@ -231,8 +232,8 @@ val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
 val parse :
   emitters:'id emitters ->
   Content_type.t ->
-  ([ `String of string | `Eof ] ->
-   [ `Continue | `Done of 'id t | `Fail of string ])
+  [ `String of string | `Eof ] ->
+  [ `Continue | `Done of 'id t | `Fail of string ]
 
 type 'a stream = unit -> 'a option
 
@@ -251,18 +252,14 @@ val of_string :
    associative list of unique ID and contents. *)
 
 val of_stream' :
-  string stream ->
-  Content_type.t ->
-  (string t, [> `Msg of string ]) result
+  string stream -> Content_type.t -> (string t, [> `Msg of string ]) result
 (** [of_stream' stream content_type] returns, if it succeeds, a value {!t} with
    the contents of the parts as strings. It is equivalent to the return value of
    [of_stream] where references have been replaced with their associated
    contents. *)
 
 val of_string' :
-  string ->
-  Content_type.t ->
-  (string t, [> `Msg of string ]) result
+  string -> Content_type.t -> (string t, [> `Msg of string ]) result
 (** [of_string' str content_type] returns, if it succeeds, a value {!t} with the
    contents of the parts as strings. It is equivalent to the return value of
    [of_string] where references have been replaced with their associated

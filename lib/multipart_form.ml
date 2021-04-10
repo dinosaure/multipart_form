@@ -271,13 +271,13 @@ type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
 let rec map f = function
   | Leaf { header; body } -> Leaf { header; body = f body }
-  | Multipart { header ; body } ->
-    Multipart { header ; body = List.map (Option.map (map f)) body }
+  | Multipart { header; body } ->
+      Multipart { header; body = List.map (Option.map (map f)) body }
 
 let rec flatten = function
-  | Leaf elt -> [elt]
-  | Multipart { header = _ ; body } ->
-    List.flatten @@ List.filter_map (Option.map flatten) body
+  | Leaf elt -> [ elt ]
+  | Multipart { header = _; body } ->
+      List.flatten @@ List.filter_map (Option.map flatten) body
 
 let iter ~f buf ~off ~len =
   for i = off to len - 1 do
@@ -465,11 +465,11 @@ let blit src src_off dst dst_off len =
   Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
 
 let parse :
-  emitters:'id emitters -> Content_type.t ->
-  ([ `String of string | `Eof ] ->
-   [ `Continue | `Done of 'id t | `Fail of string ])
-  =
-  fun ~emitters content_type ->
+    emitters:'id emitters ->
+    Content_type.t ->
+    [ `String of string | `Eof ] ->
+    [ `Continue | `Done of 'id t | `Fail of string ] =
+ fun ~emitters content_type ->
   let parser = parser ~emitters content_type in
   let state = ref (Angstrom.Unbuffered.parse parser) in
   let ke = Ke.Rke.create ~capacity:0x1000 Bigarray.char in
@@ -478,34 +478,33 @@ let parse :
     | Angstrom.Unbuffered.Done (_, tree) -> `Done tree
     | Fail (_, _, msg) -> `Fail msg
     | Partial { committed; continue } ->
-      begin match data with
+        (match data with
         | `String "" -> ()
         | `String str ->
-          Ke.Rke.N.shift_exn ke committed ;
-          if committed = 0 then Ke.Rke.compress ke ;
-          Ke.Rke.N.push ke ~blit ~length:String.length ~off:0
-            ~len:(String.length str) str ;
-          let[@warning "-8"] (slice :: _) = Ke.Rke.N.peek ke in
-          state :=
-            (continue slice ~off:0 ~len:(Bigstringaf.length slice)
-               Incomplete)
+            Ke.Rke.N.shift_exn ke committed ;
+            if committed = 0 then Ke.Rke.compress ke ;
+            Ke.Rke.N.push ke ~blit ~length:String.length ~off:0
+              ~len:(String.length str) str ;
+            let[@warning "-8"] (slice :: _) = Ke.Rke.N.peek ke in
+            state :=
+              continue slice ~off:0 ~len:(Bigstringaf.length slice) Incomplete
         | `Eof ->
-          match Ke.Rke.N.peek ke with
-          | [] ->
-            state := (continue Bigstringaf.empty ~off:0 ~len:0 Complete)
-          | [ slice ] ->
-            state := (continue slice ~off:0 ~len:(Bigstringaf.length slice)
-                      Complete)
-          | slice :: _ ->
-            state := (continue slice ~off:0 ~len:(Bigstringaf.length slice)
-                      Incomplete)
-      end;
-      `Continue
+        match Ke.Rke.N.peek ke with
+        | [] -> state := continue Bigstringaf.empty ~off:0 ~len:0 Complete
+        | [ slice ] ->
+            state :=
+              continue slice ~off:0 ~len:(Bigstringaf.length slice) Complete
+        | slice :: _ ->
+            state :=
+              continue slice ~off:0 ~len:(Bigstringaf.length slice) Incomplete) ;
+        `Continue
 
 let of_stream_tbl stream content_type =
   let gen =
     let v = ref (-1) in
-    fun () -> incr v ; !v in
+    fun () ->
+      incr v ;
+      !v in
   let tbl = Hashtbl.create 0x10 in
   let emitters _header =
     let idx = gen () in
@@ -514,31 +513,26 @@ let of_stream_tbl stream content_type =
     ((function Some str -> Buffer.add_string buf str | None -> ()), idx) in
   let parse = parse ~emitters content_type in
   let rec go () =
-    let data =
-      match stream () with
-      | None -> `Eof
-      | Some str -> `String str
-    in
+    let data = match stream () with None -> `Eof | Some str -> `String str in
     match parse data with
     | `Continue -> go ()
     | `Done m -> Ok (m, tbl)
-    | `Fail _msg -> Error (`Msg "Invalid input")
-  in
+    | `Fail _msg -> Error (`Msg "Invalid input") in
   go ()
 
 let of_stream stream content_type =
   match of_stream_tbl stream content_type with
   | Ok (m, tbl) ->
-    let assoc =
-      Hashtbl.fold (fun k b a -> (k, Buffer.contents b) :: a) tbl [] in
-    Ok (m, assoc)
+      let assoc =
+        Hashtbl.fold (fun k b a -> (k, Buffer.contents b) :: a) tbl [] in
+      Ok (m, assoc)
   | Error e -> Error e
 
 let of_stream' stream content_type =
   match of_stream_tbl stream content_type with
   | Ok (m, tbl) ->
-    let m' = map (fun k -> Buffer.contents (Hashtbl.find tbl k)) m in
-    Ok m'
+      let m' = map (fun k -> Buffer.contents (Hashtbl.find tbl k)) m in
+      Ok m'
   | Error e -> Error e
 
 let stream_of_string str =
@@ -550,11 +544,9 @@ let stream_of_string str =
       consumed := true ;
       Some str)
 
-let of_string str content_type =
-  of_stream (stream_of_string str) content_type
+let of_string str content_type = of_stream (stream_of_string str) content_type
 
-let of_string' str content_type =
-  of_stream' (stream_of_string str) content_type
+let of_string' str content_type = of_stream' (stream_of_string str) content_type
 
 type part = { header : Header.t; body : (string * int * int) stream }
 
@@ -609,7 +601,6 @@ let multipart ~rng ?g ?(header = Header.empty) ?boundary parts =
 
 (* stream helpers *)
 module Stream = struct
-
   let none () = None
 
   let map f stream =
@@ -649,7 +640,6 @@ module Stream = struct
         (fun s -> (s, 0, String.length s))
         (Prettym.to_stream Header.Encoder.header header) in
     content_stream @ crlf () @ body
-
 end
 
 let to_stream : multipart -> Header.t * (string * int * int) stream =
