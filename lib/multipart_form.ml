@@ -274,6 +274,11 @@ let rec map f = function
   | Multipart { header ; body } ->
     Multipart { header ; body = List.map (Option.map (map f)) body }
 
+let rec flatten = function
+  | Leaf elt -> [elt]
+  | Multipart { header = _ ; body } ->
+    List.flatten @@ List.filter_map (Option.map flatten) body
+
 let iter ~f buf ~off ~len =
   for i = off to len - 1 do
     f buf.[i]

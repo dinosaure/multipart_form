@@ -202,6 +202,7 @@ type 'a elt = { header : Header.t; body : 'a }
 type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
 val map : ('a -> 'b) -> 'a t -> 'b t
+val flatten : 'a t -> 'a elt list
 
 val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
 (** [parser ~emitters content_type] creates an [angstrom]'s parser which can
