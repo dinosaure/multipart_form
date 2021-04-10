@@ -49,7 +49,7 @@ let parse ~on_part stream content_type =
 let blit src src_off dst dst_off len =
   Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
 
-let parse ~identify stream content_type =
+let stream ~identify stream content_type =
   let ke = Ke.Rke.create ~capacity:0x1000 Bigarray.char in
   let output, push = Lwt_stream.create () in
   let emitters header =
@@ -66,11 +66,11 @@ let parse ~identify stream content_type =
              push None ;
              Lwt.return_error (`Msg "Invalid multipart/form")
          | Partial { committed; continue } as state -> (
-             Ke.Rke.N.shift_exn ke committed ;
-             if committed = 0 then Ke.Rke.compress ke ;
              Lwt_stream.get stream >>= function
              | Some "" -> go state (* XXX(dinosaure): nothing to do. *)
              | Some str ->
+                 Ke.Rke.N.shift_exn ke committed ;
+                 if committed = 0 then Ke.Rke.compress ke ;
                  Ke.Rke.N.push ke ~blit ~length:String.length ~off:0
                    ~len:(String.length str) str ;
                  let[@warning "-8"] (slice :: _) = Ke.Rke.N.peek ke in
