@@ -456,8 +456,21 @@ let parser ~emitters content_type =
   parser ~emitters
     [ Field.Field (Field_name.content_type, Field.Content_type, content_type) ]
 
-let blit src src_off dst dst_off len =
-  Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
+let parse :
+  emitters:'id emitters -> Content_type.t ->
+  ([ `String of string | `Eof ] ->
+   [ `Continue | `Done of 'id t | `Fail of string ])
+  =
+  fun ~emitters content_type ->
+  let parser = parser ~emitters content_type in
+  let state = ref (Angstrom.Buffered.parse parser) in
+  fun data ->
+    match !state with
+    | Partial step ->
+      state := step (data :> [Angstrom.Buffered.input | `Eof]);
+      `Continue
+    | Done (_, t) -> `Done t
+    | Fail (_, _, msg) -> `Fail msg
 
 let of_stream_tbl stream content_type =
   let gen =
@@ -471,29 +484,19 @@ let of_stream_tbl stream content_type =
     let buf = Buffer.create 0x100 in
     Hashtbl.add tbl idx buf ;
     ((function Some str -> Buffer.add_string buf str | None -> ()), idx) in
-  let parser = parser ~emitters content_type in
-  let module Ke = Ke.Rke in
-  let ke = Ke.create ~capacity:0x1000 Bigarray.Char in
-  let rec go = function
-    | Angstrom.Unbuffered.Done (_, m) ->
-        Ok (m, tbl)
-    | Fail _ -> Error (`Msg "Invalid input")
-    | Partial { committed; continue } -> (
-        Ke.N.shift_exn ke committed ;
-        if committed = 0 then Ke.compress ke ;
-        match stream () with
-        | Some str ->
-            (* TODO: [""] *)
-            Ke.N.push ke ~blit ~length:String.length ~off:0
-              ~len:(String.length str) str ;
-            let[@warning "-8"] (slice :: _) = Ke.N.peek ke in
-            go
-              (continue slice ~off:0 ~len:(Bigstringaf.length slice) Incomplete)
-        | None ->
-            let[@warning "-8"] (slice :: _) = Ke.N.peek ke in
-            go (continue slice ~off:0 ~len:(Bigstringaf.length slice) Complete))
+  let parse = parse ~emitters content_type in
+  let rec go () =
+    let data =
+      match stream () with
+      | None -> `Eof
+      | Some str -> `String str
+    in
+    match parse data with
+    | `Continue -> go ()
+    | `Done m -> Ok (m, tbl)
+    | `Fail _msg -> Error (`Msg "Invalid input")
   in
-  go (Angstrom.Unbuffered.parse parser)
+  go ()
 
 let of_stream stream content_type =
   match of_stream_tbl stream content_type with

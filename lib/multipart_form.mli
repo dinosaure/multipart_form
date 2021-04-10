@@ -227,6 +227,12 @@ val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
     In some contexts, something else such as an [Lwt_stream.t]/asynchronous
    stream can be used instead a {!Buffer.t}. *)
 
+val parse :
+  emitters:'id emitters ->
+  Content_type.t ->
+  ([ `String of string | `Eof ] ->
+   [ `Continue | `Done of 'id t | `Fail of string ])
+
 type 'a stream = unit -> 'a option
 
 val of_stream :
