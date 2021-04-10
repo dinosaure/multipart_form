@@ -461,6 +461,9 @@ let parser ~emitters content_type =
   parser ~emitters
     [ Field.Field (Field_name.content_type, Field.Content_type, content_type) ]
 
+let blit src src_off dst dst_off len =
+  Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
+
 let parse :
   emitters:'id emitters -> Content_type.t ->
   ([ `String of string | `Eof ] ->
@@ -468,21 +471,41 @@ let parse :
   =
   fun ~emitters content_type ->
   let parser = parser ~emitters content_type in
-  let state = ref (Angstrom.Buffered.parse parser) in
+  let state = ref (Angstrom.Unbuffered.parse parser) in
+  let ke = Ke.Rke.create ~capacity:0x1000 Bigarray.char in
   fun data ->
     match !state with
-    | Partial step ->
-      state := step (data :> [Angstrom.Buffered.input | `Eof]);
-      `Continue
-    | Done (_, t) -> `Done t
+    | Angstrom.Unbuffered.Done (_, tree) -> `Done tree
     | Fail (_, _, msg) -> `Fail msg
+    | Partial { committed; continue } ->
+      begin match data with
+        | `String "" -> ()
+        | `String str ->
+          Ke.Rke.N.shift_exn ke committed ;
+          if committed = 0 then Ke.Rke.compress ke ;
+          Ke.Rke.N.push ke ~blit ~length:String.length ~off:0
+            ~len:(String.length str) str ;
+          let[@warning "-8"] (slice :: _) = Ke.Rke.N.peek ke in
+          state :=
+            (continue slice ~off:0 ~len:(Bigstringaf.length slice)
+               Incomplete)
+        | `Eof ->
+          match Ke.Rke.N.peek ke with
+          | [] ->
+            state := (continue Bigstringaf.empty ~off:0 ~len:0 Complete)
+          | [ slice ] ->
+            state := (continue slice ~off:0 ~len:(Bigstringaf.length slice)
+                      Complete)
+          | slice :: _ ->
+            state := (continue slice ~off:0 ~len:(Bigstringaf.length slice)
+                      Incomplete)
+      end;
+      `Continue
 
 let of_stream_tbl stream content_type =
   let gen =
     let v = ref (-1) in
-    fun () ->
-      incr v ;
-      !v in
+    fun () -> incr v ; !v in
   let tbl = Hashtbl.create 0x10 in
   let emitters _header =
     let idx = gen () in

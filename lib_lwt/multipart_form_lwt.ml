@@ -14,8 +14,7 @@ let parse ~on_part stream content_type =
     Hashtbl.add tbl id (client_emitter, client_id);
     (fun data -> Queue.push (id, data) q), id
   in
-  let parser = parser ~emitters content_type in
-  let state = ref (Angstrom.Buffered.parse parser) in
+  let parse = Multipart_form.parse ~emitters content_type in
   let rec go () =
     if not (Queue.is_empty q) then begin
       (* Pop pending emits if any *)
@@ -25,68 +24,38 @@ let parse ~on_part stream content_type =
       go ()
     end else begin
       (* otherwise, continue parsing (thus adding elements to the queue) *)
-      match !state with
-      | Partial step ->
-        Lwt_stream.get stream >>= fun data ->
-        state := (step (
-          match data with
-          | None -> `Eof
-          | Some str -> `String str
-        ));
-        go ()
-      | Done (_, t) -> Lwt.return (Ok t)
-      | Fail _ -> Lwt.return (Error (`Msg "Invalid input"))
+      Lwt_stream.get stream >>= fun data ->
+      let data = match data with Some s -> `String s | None -> `Eof in
+      match parse data with
+      | `Continue -> go ()
+      | `Done t ->
+        let client_id_of_id id = snd (Hashtbl.find tbl id) in
+        Lwt.return_ok (map client_id_of_id t)
+      | `Fail _ ->
+        Lwt.return_error (`Msg "Invalid multipart/form")
     end
   in
-  go () >>= fun res ->
-  match res with
-  | Ok t ->
-    let client_id_of_id id = snd (Hashtbl.find tbl id) in
-    Lwt.return (Ok (map client_id_of_id t))
-  | Error e ->
-    Lwt.return (Error e)
-
-let blit src src_off dst dst_off len =
-  Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
+  go ()
 
 let stream ~identify stream content_type =
-  let ke = Ke.Rke.create ~capacity:0x1000 Bigarray.char in
   let output, push = Lwt_stream.create () in
   let emitters header =
     let stream, emitter = Lwt_stream.create () in
     let id = identify header in
     push (Some (id, header, stream)) ;
     (emitter, id) in
+  let parse = Multipart_form.parse ~emitters content_type in
   ( `Parse
-      (let rec go = function
-         | Angstrom.Unbuffered.Done (_, tree) ->
-             push None ;
-             Lwt.return_ok tree
-         | Fail _ ->
-             push None ;
-             Lwt.return_error (`Msg "Invalid multipart/form")
-         | Partial { committed; continue } as state -> (
-             Lwt_stream.get stream >>= function
-             | Some "" -> go state (* XXX(dinosaure): nothing to do. *)
-             | Some str ->
-                 Ke.Rke.N.shift_exn ke committed ;
-                 if committed = 0 then Ke.Rke.compress ke ;
-                 Ke.Rke.N.push ke ~blit ~length:String.length ~off:0
-                   ~len:(String.length str) str ;
-                 let[@warning "-8"] (slice :: _) = Ke.Rke.N.peek ke in
-                 go
-                   (continue slice ~off:0 ~len:(Bigstringaf.length slice)
-                      Incomplete)
-             | None ->
-             match Ke.Rke.N.peek ke with
-             | [] -> go (continue Bigstringaf.empty ~off:0 ~len:0 Complete)
-             | [ slice ] ->
-                 go
-                   (continue slice ~off:0 ~len:(Bigstringaf.length slice)
-                      Complete)
-             | slice :: _ ->
-                 go
-                   (continue slice ~off:0 ~len:(Bigstringaf.length slice)
-                      Incomplete)) in
-       go (Angstrom.Unbuffered.parse (parser ~emitters content_type))),
+      (let rec go () =
+         Lwt_stream.get stream >>= fun data ->
+         let data = match data with Some s -> `String s | None -> `Eof in
+         match parse data with
+         | `Continue -> go ()
+         | `Done tree ->
+           push None ;
+           Lwt.return_ok tree
+         | `Fail _ ->
+           push None ;
+           Lwt.return_error (`Msg "Invalid multipart/form")
+       in go ()),
     output )
