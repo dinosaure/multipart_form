@@ -459,7 +459,7 @@ let parser ~emitters content_type =
 let blit src src_off dst dst_off len =
   Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
 
-let of_stream stream content_type =
+let of_stream_tbl stream content_type =
   let gen =
     let v = ref (-1) in
     fun () ->
@@ -476,9 +476,7 @@ let of_stream stream content_type =
   let ke = Ke.create ~capacity:0x1000 Bigarray.Char in
   let rec go = function
     | Angstrom.Unbuffered.Done (_, m) ->
-        let assoc =
-          Hashtbl.fold (fun k b a -> (k, Buffer.contents b) :: a) tbl [] in
-        Ok (m, assoc)
+        Ok (m, tbl)
     | Fail _ -> Error (`Msg "Invalid input")
     | Partial { committed; continue } -> (
         Ke.N.shift_exn ke committed ;
@@ -497,15 +495,35 @@ let of_stream stream content_type =
   in
   go (Angstrom.Unbuffered.parse parser)
 
-let of_string str content_type =
+let of_stream stream content_type =
+  match of_stream_tbl stream content_type with
+  | Ok (m, tbl) ->
+    let assoc =
+      Hashtbl.fold (fun k b a -> (k, Buffer.contents b) :: a) tbl [] in
+    Ok (m, assoc)
+  | Error e -> Error e
+
+let of_stream' stream content_type =
+  match of_stream_tbl stream content_type with
+  | Ok (m, tbl) ->
+    let m' = map (fun k -> Buffer.contents (Hashtbl.find tbl k)) m in
+    Ok m'
+  | Error e -> Error e
+
+let stream_of_string str =
   let consumed = ref false in
-  let stream () =
+  fun () ->
     if !consumed
     then None
     else (
       consumed := true ;
-      Some str) in
-  of_stream stream content_type
+      Some str)
+
+let of_string str content_type =
+  of_stream (stream_of_string str) content_type
+
+let of_string' str content_type =
+  of_stream' (stream_of_string str) content_type
 
 type part = { header : Header.t; body : (string * int * int) stream }
 

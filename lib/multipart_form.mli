@@ -243,6 +243,24 @@ val of_string :
 (** [of_string str content_type] returns, if it succeeds, a value {!t} with an
    associative list of unique ID and contents. *)
 
+val of_stream' :
+  string stream ->
+  Content_type.t ->
+  (string t, [> `Msg of string ]) result
+(** [of_stream' stream content_type] returns, if it succeeds, a value {!t} with
+   the contents of the parts as strings. It is equivalent to the return value of
+   [of_stream] where references have been replaced with their associated
+   contents. *)
+
+val of_string' :
+  string ->
+  Content_type.t ->
+  (string t, [> `Msg of string ]) result
+(** [of_string' str content_type] returns, if it succeeds, a value {!t} with the
+   contents of the parts as strings. It is equivalent to the return value of
+   [of_string] where references have been replaced with their associated
+   contents. *)
+
 type part
 
 val part :
