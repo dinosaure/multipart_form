@@ -10,18 +10,23 @@ let parse ~on_part stream content_type =
   let tbl = Hashtbl.create 0x10 in
   let emitters header =
     let id = fresh_id () in
-    let client_emitter, client_id = on_part header in
-    Hashtbl.add tbl id (client_emitter, client_id);
-    (fun data -> Queue.push (id, data) q), id
+    Queue.push (`Id (header, id)) q;
+    (fun data -> Queue.push (`Data (id, data)) q), id
   in
   let parse = Multipart_form.parse ~emitters content_type in
   let rec go () =
     if not (Queue.is_empty q) then begin
       (* Pop pending emits if any *)
-      let (id, data) = Queue.pop q in
-      let client_emitter = fst (Hashtbl.find tbl id) in
-      client_emitter data >>= fun () ->
-      go ()
+      begin match Queue.pop q with
+        | `Id (header, id) ->
+          on_part header >>= fun (client_emitter, client_id) ->
+          Hashtbl.add tbl id (client_emitter, client_id);
+          go ()
+        | `Data (id, data) ->
+          let client_emitter = fst (Hashtbl.find tbl id) in
+          client_emitter data >>= fun () ->
+          go ()
+      end
     end else begin
       (* otherwise, continue parsing (thus adding elements to the queue) *)
       Lwt_stream.get stream >>= fun data ->
