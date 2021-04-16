@@ -6,6 +6,13 @@ val parse :
   Content_type.t ->
   ('id t, [> `Msg of string ]) Lwt_result.t
 
+val stream2 :
+  identify:(Header.t -> 'id) ->
+  string Lwt_stream.t ->
+  Content_type.t ->
+  [ `Parse of ('id t, [> `Msg of string ]) result Lwt.t ]
+  * ('id * Header.t * string Lwt_stream.t) Lwt_stream.t
+
 val stream :
   identify:(Header.t -> 'id) ->
   string Lwt_stream.t ->
