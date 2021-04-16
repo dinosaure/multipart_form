@@ -55,7 +55,9 @@ let stream ~identify stream content_type =
          Lwt_stream.get stream >>= fun data ->
          let data = match data with Some s -> `String s | None -> `Eof in
          match parse data with
-         | `Continue -> go ()
+         | `Continue ->
+           Lwt.pause () >>= fun () ->
+           go ()
          | `Done tree ->
            push None ;
            Lwt.return_ok tree
