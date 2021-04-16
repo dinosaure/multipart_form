@@ -119,7 +119,7 @@ module RAW = struct
       | false ->
           Bytes.set chunk (Bytes.length chunk - 1) end_of_body.[0] ;
           write_line (Bytes.unsafe_to_string chunk) ;
-          advance 1 *> m in
+          commit *> advance 1 *> m in
 
     Unsafe.take_while (( <> ) end_of_body.[0]) Bigstringaf.substring
     >>= fun chunk ->
@@ -141,7 +141,7 @@ module RAW = struct
             let chunk = Bytes.create len in
             Bigstringaf.blit_to_bytes ba ~src_off:off chunk ~dst_off:0 ~len ;
             write_data (Bytes.unsafe_to_string chunk))
-        >>= fun () -> m
+        >>= fun () -> commit *> m
 end
 
 module QP = struct
