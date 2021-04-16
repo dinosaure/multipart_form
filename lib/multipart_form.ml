@@ -473,6 +473,7 @@ let parse :
   let parser = parser ~emitters content_type in
   let state = ref (Angstrom.Unbuffered.parse parser) in
   let ke = Ke.Rke.create ~capacity:0x1000 Bigarray.char in
+  let cnt = ref 0 in
   fun data ->
     match !state with
     | Angstrom.Unbuffered.Done (_, tree) -> `Done tree
@@ -481,6 +482,12 @@ let parse :
         (match data with
         | `String "" -> ()
         | `String str ->
+            incr cnt;
+            if !cnt >= 1000 then (
+              cnt := 0;
+              Printf.printf "capacity: %d; length: %d; committed: %d; new data length: %d\n%!"
+                (Ke.Rke.capacity ke) (Ke.Rke.length ke) committed (String.length str);
+            );
             Ke.Rke.N.shift_exn ke committed ;
             if committed = 0 then Ke.Rke.compress ke ;
             Ke.Rke.N.push ke ~blit ~length:String.length ~off:0
