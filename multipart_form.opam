@@ -23,6 +23,7 @@ depends: [
   "lwt"
   "mrmime"
   "fmt"
+  "logs"
   "ke" {>= "0.4"}
   "alcotest" {with-test}
   "bigarray-compat" {>= "1.0.0"}

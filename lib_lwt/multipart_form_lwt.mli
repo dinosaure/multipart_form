@@ -1,18 +1,5 @@
 open Multipart_form
 
-val parse :
-  on_part:(Header.t -> ((string option -> unit Lwt.t) * 'id) Lwt.t) ->
-  string Lwt_stream.t ->
-  Content_type.t ->
-  ('id t, [> `Msg of string ]) Lwt_result.t
-
-val stream2 :
-  identify:(Header.t -> 'id) ->
-  string Lwt_stream.t ->
-  Content_type.t ->
-  [ `Parse of ('id t, [> `Msg of string ]) result Lwt.t ]
-  * ('id * Header.t * string Lwt_stream.t) Lwt_stream.t
-
 val stream :
   identify:(Header.t -> 'id) ->
   string Lwt_stream.t ->
@@ -48,4 +35,24 @@ val stream :
 
     By this way, as long as we parse [src], at the same time, we save parts
     into filenames. Finally, we return the [multipart/form] structure with
-    a mapping between temporary files and parts. *)
+    a mapping between temporary files and parts.
+
+    {b NOTE:} This function does not have any bounds about memory consumption.
+    By this way, for huge file, even if we ensure to {i interlace} the given
+    stream and the returned stream with [Lwt.both], we don't create an
+    opportunity to collect garbages and the limit will be only your memory.
+
+    If you really care about memory consumption, we advise you to use
+    {!stream_with_bounds} which limits memory consumptions of streams. *)
+
+val stream_with_bounds :
+  ?bounds:int ->
+  identify:(Header.t -> 'id) ->
+  string Lwt_stream.t ->
+  Content_type.t ->
+  [ `Parse of ('id t, [> `Msg of string ]) result Lwt.t ]
+  * ('id * Header.t * string Lwt_stream.t) Lwt_stream.t
+(** [stream_with_bounds ?bounds ~identify src content_type] is exactly
+    {!stream} with bounds on memory consumption. That's say we ensure
+    to give an opportunity to [lwt] to re-schedule promises and to give
+    an opportunity to collect garbage with a desired limit [bounds]. *)
