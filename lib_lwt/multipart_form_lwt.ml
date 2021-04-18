@@ -1,7 +1,7 @@
 open Multipart_form
 open Lwt.Infix
 
-let stream_with_bounds ?(bounds = 10) ~identify stream content_type =
+let stream ?(bounds = 10) ~identify stream content_type =
   let output, push = Lwt_stream.create () in
   let q = Queue.create () in
   let fresh_id =
@@ -47,26 +47,3 @@ let stream_with_bounds ?(bounds = 10) ~identify stream content_type =
             push None ;
             Lwt.return_error (`Msg "Invalid multipart/form")) in
   (`Parse (go ()), output)
-
-let stream ~identify stream content_type =
-  let output, push = Lwt_stream.create () in
-  let emitters header =
-    let stream, emitter = Lwt_stream.create () in
-    let id = identify header in
-    push (Some (id, header, stream)) ;
-    (emitter, id) in
-  let parse = Multipart_form.parse ~emitters content_type in
-  ( `Parse
-      (let rec go () =
-         Lwt_stream.get stream >>= fun data ->
-         let data = match data with Some s -> `String s | None -> `Eof in
-         match parse data with
-         | `Continue -> go ()
-         | `Done tree ->
-             push None ;
-             Lwt.return_ok tree
-         | `Fail _ ->
-             push None ;
-             Lwt.return_error (`Msg "Invalid multipart/form") in
-       go ()),
-    output )
