@@ -201,6 +201,10 @@ type 'a elt = { header : Header.t; body : 'a }
        indeed, we can have a multipart inside a multipart.}} *)
 type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
+val map : ('a -> 'b) -> 'a t -> 'b t
+
+val flatten : 'a t -> 'a elt list
+
 val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
 (** [parser ~emitters content_type] creates an [angstrom]'s parser which can
    process a [multipart/form-data] input. For each [Leaf], the parser calls
@@ -225,6 +229,12 @@ val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
     In some contexts, something else such as an [Lwt_stream.t]/asynchronous
    stream can be used instead a {!Buffer.t}. *)
 
+val parse :
+  emitters:'id emitters ->
+  Content_type.t ->
+  [ `String of string | `Eof ] ->
+  [ `Continue | `Done of 'id t | `Fail of string ]
+
 type 'a stream = unit -> 'a option
 
 val of_stream :
@@ -240,6 +250,20 @@ val of_string :
   (int t * (int * string) list, [> `Msg of string ]) result
 (** [of_string str content_type] returns, if it succeeds, a value {!t} with an
    associative list of unique ID and contents. *)
+
+val of_stream' :
+  string stream -> Content_type.t -> (string t, [> `Msg of string ]) result
+(** [of_stream' stream content_type] returns, if it succeeds, a value {!t} with
+   the contents of the parts as strings. It is equivalent to the return value of
+   [of_stream] where references have been replaced with their associated
+   contents. *)
+
+val of_string' :
+  string -> Content_type.t -> (string t, [> `Msg of string ]) result
+(** [of_string' str content_type] returns, if it succeeds, a value {!t} with the
+   contents of the parts as strings. It is equivalent to the return value of
+   [of_string] where references have been replaced with their associated
+   contents. *)
 
 type part
 

@@ -1,0 +1,5 @@
+(library
+ (name multipart_form_lwt)
+ (public_name multipart_form.lwt)
+ (libraries bigstringaf bigarray bigarray-compat result angstrom
+   multipart_form lwt ke))
