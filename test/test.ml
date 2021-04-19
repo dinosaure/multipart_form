@@ -135,7 +135,7 @@ let simple_with_helpers =
     @@ Content_type.of_string
          "multipart/form-data; \
           boundary=------------------------eb790219f130e103\r\n" in
-  match of_string simple_without_header content_type with
+  match of_string_to_list simple_without_header content_type with
   | Ok (m, assoc) ->
       let m, r = to_map ~assoc m in
       let m = Map.bindings m in
@@ -196,7 +196,7 @@ let make_simple_multipart =
   let t = multipart ~rng:(fun ?g:_ len -> random_string len) [ part0; part1 ] in
   let header, stream = to_stream t in
   let str = string_of_stream stream in
-  match of_string str (Header.content_type header) with
+  match of_string_to_list str (Header.content_type header) with
   | Ok (m, assoc) ->
       let m, _ = to_map ~assoc m in
       let m = Map.bindings m in
