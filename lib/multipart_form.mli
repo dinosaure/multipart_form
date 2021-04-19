@@ -220,12 +220,12 @@ val parse :
    through the [emitters] callback.
 
    For each part, the parser calls [emitters] to be able to save contents and
-   get a {i reference} of it. Each part then corresponds to a [Leaf] of the
+   get a {i reference} of it. Each part then corresponds to a [Leaf] in the
    multipart document returned in the [`Done] case, using the corresponding
    reference.
 
    As a simple example, one can use [parse] to generate an unique ID for each
-   part and associate it to a {!Buffer.t}. Then, [tbl] maintains a mapping
+   part and associate it to a {!Buffer.t}. The table [tbl] maintains the mapping
    between the part IDs that can be found in the return value and the contents
    of the parts.
 
@@ -248,12 +248,12 @@ val parse :
       loop ()
     ]}
 
-    [parse] handles the general case of parsing streamed input and producing
-    streamed output, and does not depend on any concurrenty library. As such,
-    its use is somewhat intricate as illustrated by the example above.
-    The simpler functions [of_{stream,string}_to_{list,tree}] below can be
-    used when streaming is not needed, and when using Lwt, the
-    [Multipart_form_lwt] module provides a more conveniente API for in the
+    As illustrated by the example above, the use of [parse] is somewhat
+    intricate. This is because [parse] handles the general case of parsing
+    streamed input and producing streamed output, and does not depend on any
+    concurrenty library. Simpler functions [of_{stream,string}_to_{list,tree}]
+    can be found below for when streaming is not needed. When using Lwt, the
+    [Multipart_form_lwt] module provides a more convenient API, both in the
     streaming and non-streaming case.
  *)
 
