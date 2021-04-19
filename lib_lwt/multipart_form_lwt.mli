@@ -1,5 +1,7 @@
 open Multipart_form
 
+(** {3 Streaming API.} *)
+
 val stream :
   ?bounds:int ->
   identify:(Header.t -> 'id) ->
@@ -37,3 +39,24 @@ val stream :
     By this way, as long as we parse [src], at the same time, we save parts
     into filenames. Finally, we return the [multipart/form] structure with
     a mapping between temporary files and parts. *)
+
+(** {3 Non-streaming API.}
+
+    These functions will store the entire multipart contents in memory,
+    and therefore should not be used when handling possibly large data. *)
+
+val of_stream_to_list :
+  string Lwt_stream.t ->
+  Content_type.t ->
+  (int t * (int * string) list, [> `Msg of string ]) result Lwt.t
+(** Similar to [Multipart_form.of_stream_to_list], but consumes a
+   [Lwt_stream.t]. *)
+
+val of_stream_to_tree :
+  string Lwt_stream.t ->
+  Content_type.t ->
+  (string t, [> `Msg of string ]) result Lwt.t
+(** [of_stream_to_tree stream content_type] returns, if it succeeds, a value
+   {!t} representing the multipart document, where the contents of the parts are
+   stored as strings. It is equivalent to [of_stream_to_list] where references
+   have been replaced with their associated contents. *)

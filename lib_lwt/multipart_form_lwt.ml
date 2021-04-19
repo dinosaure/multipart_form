@@ -47,3 +47,34 @@ let stream ?(bounds = 10) ~identify stream content_type =
             push None ;
             Lwt.return_error (`Msg "Invalid multipart/form")) in
   (`Parse (go ()), output)
+
+(* only used internally to implement of_stream_to_{tree,list} *)
+let of_stream_to_tbl s content_type =
+  let identify =
+    let id = ref (-1) in
+    fun _header ->
+      incr id ;
+      !id in
+  let `Parse t, parts = stream ~identify s content_type in
+  let parts_tbl = Hashtbl.create 0x10 in
+  let consume_part (id, _, part_stream) =
+    let buf = Buffer.create 4096 in
+    Lwt_stream.iter (Buffer.add_string buf) part_stream >>= fun () ->
+    Hashtbl.add parts_tbl id (Buffer.contents buf) ;
+    Lwt.return () in
+  Lwt.both t (Lwt_stream.iter_s consume_part parts) >>= fun (res, ()) ->
+  Lwt.return @@ Result.map (fun tree -> (tree, parts_tbl)) res
+
+let of_stream_to_tree s content_type =
+  of_stream_to_tbl s content_type >>= fun res ->
+  Lwt.return
+  @@ Result.map (fun (tree, parts_tbl) -> map (Hashtbl.find parts_tbl) tree) res
+
+let of_stream_to_list s content_type =
+  of_stream_to_tbl s content_type >>= fun res ->
+  Lwt.return
+  @@ Result.map
+       (fun (tree, parts_tbl) ->
+         let assoc = Hashtbl.fold (fun k b a -> (k, b) :: a) parts_tbl [] in
+         (tree, assoc))
+       res
