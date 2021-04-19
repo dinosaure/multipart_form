@@ -180,6 +180,8 @@ module Header : sig
   end
 end
 
+(** {2 Decoder.} *)
+
 type 'id emitters = Header.t -> (string option -> unit) * 'id
 (** Type of emitters.
 
@@ -237,33 +239,35 @@ val parse :
 
 type 'a stream = unit -> 'a option
 
-val of_stream :
+val of_stream_to_list :
   string stream ->
   Content_type.t ->
   (int t * (int * string) list, [> `Msg of string ]) result
-(** [of_stream stream content_type] returns, if it succeeds, a value {!t} with
-   an associative list of unique ID and contents. *)
+(** [of_stream_to_list stream content_type] returns, if it succeeds, a value
+   {!t} with an associative list of unique ID and contents. *)
 
-val of_string :
+val of_string_to_list :
   string ->
   Content_type.t ->
   (int t * (int * string) list, [> `Msg of string ]) result
 (** [of_string str content_type] returns, if it succeeds, a value {!t} with an
    associative list of unique ID and contents. *)
 
-val of_stream' :
+val of_stream_to_tree :
   string stream -> Content_type.t -> (string t, [> `Msg of string ]) result
-(** [of_stream' stream content_type] returns, if it succeeds, a value {!t} with
-   the contents of the parts as strings. It is equivalent to the return value of
-   [of_stream] where references have been replaced with their associated
-   contents. *)
+(** [of_stream_to_tree stream content_type] returns, if it succeeds, a value
+   {!t} with the contents of the parts as strings. It is equivalent to the
+   return value of [of_stream_to_list] where references have been replaced
+   with their associated contents. *)
 
-val of_string' :
+val of_string_to_tree :
   string -> Content_type.t -> (string t, [> `Msg of string ]) result
-(** [of_string' str content_type] returns, if it succeeds, a value {!t} with the
-   contents of the parts as strings. It is equivalent to the return value of
-   [of_string] where references have been replaced with their associated
-   contents. *)
+(** [of_string_to_tree str content_type] returns, if it succeeds, a value {!t}
+   with the contents of the parts as strings. It is equivalent to the return
+   value of [of_string_to_list] where references have been replaced with their
+   associated contents. *)
+
+(** {2 Encoder.} *)
 
 type part
 
@@ -273,6 +277,9 @@ val part :
   ?encoding:Content_encoding.t ->
   (string * int * int) stream ->
   part
+(** [part ?header ?disposition ?encoding stream] makes a new part from a body
+   stream [stream] and fields. [stream] while be mapped according to
+   [encoding]. *)
 
 type multipart
 
@@ -283,5 +290,10 @@ val multipart :
   ?boundary:string ->
   part list ->
   multipart
+(** [multipart ~rng ?g ?header ?boundary parts] makes a new multipart from
+   a bunch of parts, [fields] and a specified [boundary]. If [boundary] is not
+   specified, we use [rng] to make a random boundary (we did not check that it
+   does not appear inside [parts]). *)
 
 val to_stream : multipart -> Header.t * (string * int * int) stream
+(** [to_stream ms] generates an HTTP header and a stream. *)

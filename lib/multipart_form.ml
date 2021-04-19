@@ -574,7 +574,7 @@ let of_stream_tbl stream content_type =
     | `Fail _msg -> Error (`Msg "Invalid input") in
   go ()
 
-let of_stream stream content_type =
+let of_stream_to_list stream content_type =
   match of_stream_tbl stream content_type with
   | Ok (m, tbl) ->
       let assoc =
@@ -582,7 +582,7 @@ let of_stream stream content_type =
       Ok (m, assoc)
   | Error e -> Error e
 
-let of_stream' stream content_type =
+let of_stream_to_tree stream content_type =
   match of_stream_tbl stream content_type with
   | Ok (m, tbl) ->
       let m' = map (fun k -> Buffer.contents (Hashtbl.find tbl k)) m in
@@ -598,9 +598,11 @@ let stream_of_string str =
       consumed := true ;
       Some str)
 
-let of_string str content_type = of_stream (stream_of_string str) content_type
+let of_string_to_list str content_type =
+  of_stream_to_list (stream_of_string str) content_type
 
-let of_string' str content_type = of_stream' (stream_of_string str) content_type
+let of_string_to_tree str content_type =
+  of_stream_to_tree (stream_of_string str) content_type
 
 type part = { header : Header.t; body : (string * int * int) stream }
 
