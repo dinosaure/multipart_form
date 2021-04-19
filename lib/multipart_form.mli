@@ -207,13 +207,27 @@ val map : ('a -> 'b) -> 'a t -> 'b t
 
 val flatten : 'a t -> 'a elt list
 
-val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
-(** [parser ~emitters content_type] creates an [angstrom]'s parser which can
-   process a [multipart/form-data] input. For each [Leaf], the parser calls
-   [emitters] to be able to save contents and get a {i reference} of it.
+(** {3 Streaming API.} *)
 
-    A simple use of it is to generate an unique ID and associate it to a
-   {!Buffer.t} such as:
+val parse :
+  emitters:'id emitters ->
+  Content_type.t ->
+  [ `String of string | `Eof ] ->
+  [ `Continue | `Done of 'id t | `Fail of string ]
+(** [parse ~emitters content_type] returns a function that can be called
+   repeatedly to feed it successive chunks of a [multipart/form-data] input
+   stream. It then allows streaming the output (the contents of the parts)
+   through the [emitters] callback.
+
+   For each part, the parser calls [emitters] to be able to save contents and
+   get a {i reference} of it. Each part then corresponds to a [Leaf] of the
+   multipart document returned in the [`Done] case, using the corresponding
+   reference.
+
+   As a simple example, one can use [parse] to generate an unique ID for each
+   part and associate it to a {!Buffer.t}. Then, [tbl] maintains a mapping
+   between the part IDs that can be found in the return value and the contents
+   of the parts.
 
     {[
       let gen = let v = ref (-1) in fun () -> incr v ; !v in
@@ -223,19 +237,38 @@ val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
         let buf = Buffer.create 0x100 in
         (function None -> ()
                 | Some str -> Buffer.add_string buf str), idx in
-      parser ~emitters content_type ]}
+      let step = parse ~emitters content_type in
+      let get_next_input_chunk () = ... in
+      let rec loop () =
+        match step (get_next_input_chunk ()) with
+        | `Continue -> loop ()
+        | `Done tree -> Ok tree
+        | `Fail msg -> Error msg
+      in
+      loop ()
+    ]}
 
-    With such style, a mapping exists between the returned value {!t} and [tbl].
-   At the end, the user is able to extract contents with these values.
+    [parse] handles the general case of parsing streamed input and producing
+    streamed output, and does not depend on any concurrenty library. As such,
+    its use is somewhat intricate as illustrated by the example above.
+    The simpler functions [of_{stream,string}_to_{list,tree}] below can be
+    used when streaming is not needed, and when using Lwt, the
+    [Multipart_form_lwt] module provides a more conveniente API for in the
+    streaming and non-streaming case.
+ *)
 
-    In some contexts, something else such as an [Lwt_stream.t]/asynchronous
-   stream can be used instead a {!Buffer.t}. *)
+val parser : emitters:'id emitters -> Content_type.t -> 'id t Angstrom.t
+(** [parse ~emitters content_type] gives access to the underlying [angstrom]
+    parser used internally by the [parse] function. This is useful when one
+    needs control over the parsing buffer used by Angstrom. *)
 
-val parse :
-  emitters:'id emitters ->
-  Content_type.t ->
-  [ `String of string | `Eof ] ->
-  [ `Continue | `Done of 'id t | `Fail of string ]
+(** {3 Non-streaming API.}
+
+    The functions below offer a simpler API for the case where streaming the
+    output is not needed. This means that the entire contents of the multipart
+    data will be stored in memory: they should not be used when dealing with
+    possibly large data.
+*)
 
 type 'a stream = unit -> 'a option
 
@@ -243,29 +276,27 @@ val of_stream_to_list :
   string stream ->
   Content_type.t ->
   (int t * (int * string) list, [> `Msg of string ]) result
-(** [of_stream_to_list stream content_type] returns, if it succeeds, a value
-   {!t} with an associative list of unique ID and contents. *)
+(** [of_stream_to_list stream content_type] returns, if it succeeds, a pair of a
+   value {!t} and an associative list {!a}. The multipart document {!t}
+   references parts using unique IDs (integers) and {!a} associates these IDs to
+   the respective contents of each part, stored as a string. *)
 
 val of_string_to_list :
   string ->
   Content_type.t ->
   (int t * (int * string) list, [> `Msg of string ]) result
-(** [of_string str content_type] returns, if it succeeds, a value {!t} with an
-   associative list of unique ID and contents. *)
+(** Similar to [of_stream_to_list], but takes the input as a string. *)
 
 val of_stream_to_tree :
   string stream -> Content_type.t -> (string t, [> `Msg of string ]) result
 (** [of_stream_to_tree stream content_type] returns, if it succeeds, a value
-   {!t} with the contents of the parts as strings. It is equivalent to the
-   return value of [of_stream_to_list] where references have been replaced
-   with their associated contents. *)
+   {!t} representing the multipart document, where the contents of the parts are
+   stored as strings. It is equivalent to [of_stream_to_list] where references
+   have been replaced with their associated contents. *)
 
 val of_string_to_tree :
   string -> Content_type.t -> (string t, [> `Msg of string ]) result
-(** [of_string_to_tree str content_type] returns, if it succeeds, a value {!t}
-   with the contents of the parts as strings. It is equivalent to the return
-   value of [of_string_to_list] where references have been replaced with their
-   associated contents. *)
+(** Similar to [of_string_to_tree], but takes the input as a string. *)
 
 (** {2 Encoder.} *)
 

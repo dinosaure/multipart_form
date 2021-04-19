@@ -51,7 +51,7 @@ let stream ?(bounds = 10) ~identify stream content_type =
 (* only used internally to implement of_stream_to_{tree,list} *)
 let of_stream_to_tbl s content_type =
   let identify =
-    let id = ref 0 in
+    let id = ref (-1) in
     fun _header -> incr id; !id
   in
   let `Parse t, parts = stream ~identify s content_type in
