@@ -165,3 +165,5 @@ module Encoder = struct
     | `Ietf_token x -> string ppf x
     | `X_token x -> eval ppf [ string $ "X-"; !!string ] x
 end
+
+let to_string v = Prettym.to_string Encoder.mechanism v
