@@ -661,3 +661,5 @@ module Encoder = struct
           ]
           t.ty t.subty t.parameters
 end
+
+let to_string v = Prettym.to_string Encoder.content_type v

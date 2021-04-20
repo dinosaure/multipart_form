@@ -75,6 +75,8 @@ module Content_type : sig
   val pp : t Fmt.t
 
   val of_string : string -> (t, [> `Msg of string ]) result
+
+  val to_string : t -> string
 end
 
 module Content_encoding : sig
@@ -88,6 +90,10 @@ module Content_encoding : sig
     | `X_token of string ]
 
   val pp : t Fmt.t
+
+  val of_string : string -> (t, [> `Msg of string ]) result
+
+  val to_string : t -> string
 end
 
 module Content_disposition : sig
@@ -110,6 +116,10 @@ module Content_disposition : sig
     ?size:int ->
     string ->
     t
+
+  val of_string : string -> (t, [> `Msg of string ]) result
+
+  val to_string : t -> string
 end
 
 module Field : sig
@@ -172,6 +182,8 @@ module Header : sig
   val content_disposition : t -> Content_disposition.t option
   (** [content_disposition] returns the {!Content_disposition} value of [header]
      if it exists. *)
+
+  val to_list : t -> Field.field list
 
   val pp : t Fmt.t
 

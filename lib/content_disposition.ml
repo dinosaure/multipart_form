@@ -348,6 +348,17 @@ module Decoder = struct
       }
 end
 
+let of_string str =
+  let open Rresult in
+  Unstrctrd.of_string str
+  >>| (fun (_, v) -> Unstrctrd.fold_fws v)
+  >>| Unstrctrd.to_utf_8_string
+  >>= fun str ->
+  match Angstrom.parse_string ~consume:All Decoder.disposition str with
+  | Ok v -> Ok v
+  | Error _ ->
+      R.error_msgf "Invalid (unfolded) Content-Disposition value: %S" str
+
 module Encoder = struct
   open Prettym
 
@@ -415,3 +426,5 @@ module Encoder = struct
        ]
       @ List.map (fun (k, v) -> V (Parameter, Some (k, v))) v.parameters)
 end
+
+let to_string v = Prettym.to_string Encoder.disposition v

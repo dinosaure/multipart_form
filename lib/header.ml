@@ -23,6 +23,8 @@ let empty = []
 
 let concat a b = a @ b
 
+let to_list x = x
+
 let add : type a. Field_name.t -> a Field.t * a -> t -> t =
  fun field_name (w, v) t ->
   let field = Field.Field (field_name, w, v) in
