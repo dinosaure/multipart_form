@@ -51,6 +51,8 @@ module Content_type : sig
     type t =
       [ `Ietf_token of string | `Iana_token of string | `X_token of string ]
 
+    val iana : string -> (t, [> `Msg of string ]) result
+
     val pp : t Fmt.t
   end
 
@@ -63,6 +65,14 @@ module Content_type : sig
 
     type t = value Map.t
 
+    val key : string -> (key, [> `Msg of string ]) result
+
+    val value : string -> (value, [> `Msg of string ]) result
+
+    val add : key -> value -> t -> t
+
+    val empty : t
+
     val pp : t Fmt.t
   end
 
@@ -71,6 +81,10 @@ module Content_type : sig
     subty : Subtype.t;
     parameters : (string * Parameters.value) list;
   }
+
+  val make : Type.t -> Subtype.t -> Parameters.value Parameters.Map.t -> t
+
+  val equal : t -> t -> bool
 
   val pp : t Fmt.t
 

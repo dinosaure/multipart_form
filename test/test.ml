@@ -207,9 +207,59 @@ let make_simple_multipart =
         "file2" (List.assoc "file2" m) "Content of a.txt.\n"
   | Error (`Msg err) -> Alcotest.fail err
 
+let parse_content_type x = Multipart_form.Content_type.of_string (x ^ "\r\n")
+
+let content_type =
+  Alcotest.testable Multipart_form.Content_type.pp
+    Multipart_form.Content_type.equal
+
+let make raw expect =
+  Alcotest.test_case raw `Quick @@ fun () ->
+  match parse_content_type raw with
+  | Ok value -> Alcotest.(check content_type) raw expect value
+  | Error err ->
+      Fmt.invalid_arg "Invalid content-type value: %s (%a)." raw
+        Rresult.R.pp_msg err
+
+let content_type_0 =
+  let open Multipart_form.Content_type in
+  let value =
+    let open Rresult.R in
+    Parameters.key "charset" >>= fun charset ->
+    Parameters.value "us-ascii" >>= fun us_ascii ->
+    Subtype.iana "plain" >>| fun subty ->
+    make `Text subty Parameters.(add charset us_ascii empty) in
+  Rresult.R.get_ok value
+
+let content_type_1 =
+  let open Multipart_form.Content_type in
+  let value =
+    let open Rresult.R in
+    Parameters.key "charset" >>= fun charset ->
+    Parameters.value "us-ascii" >>= fun us_ascii ->
+    Subtype.iana "plain" >>| fun subty ->
+    make `Text subty Parameters.(add charset us_ascii empty) in
+  Rresult.R.get_ok value
+
+let content_type_2 =
+  let open Multipart_form.Content_type in
+  let value =
+    let open Rresult.R in
+    Parameters.key "charset" >>= fun charset ->
+    Parameters.value (Rosetta.encoding_to_string `ISO_8859_1) >>= fun latin1 ->
+    Subtype.iana "plain" >>| fun subty ->
+    make `Text subty Parameters.(add charset latin1 empty) in
+  Rresult.R.get_ok value
+
 let () =
   Alcotest.run "multipart_form"
     [
+      ( "content-type",
+        [
+          make "text/plain; charset=us-ascii (Plain text)" content_type_0;
+          make "text/plain; charset=\"us-ascii\"" content_type_1;
+          make "text/plain; charset=ISO-8859-1" content_type_2;
+        ] );
       ( "multipart_form (decoder)",
         [ simple_multipart_form; simple_with_helpers ] );
       ("multipart_form (encoder)", [ make_simple_multipart ]);
