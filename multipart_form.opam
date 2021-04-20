@@ -26,6 +26,7 @@ depends: [
   "logs"
   "ke" {>= "0.4"}
   "alcotest" {with-test}
+  "rosetta" {with-test}
   "bigarray-compat" {>= "1.0.0"}
   "bigstringaf" {>= "0.7.0"}
   "result" {>= "1.5"}

@@ -1,6 +1,7 @@
 (executable
  (name test)
- (libraries alcotest fmt rresult result angstrom multipart_form))
+ (libraries rosetta unstrctrd unstrctrd.parser alcotest fmt rresult result
+   angstrom multipart_form))
 
 (rule
  (alias runtest)
