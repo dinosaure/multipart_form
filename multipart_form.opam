@@ -21,7 +21,7 @@ depends: [
   "stdlib-shims"
   "pecu" {>= "0.4"}
   "lwt"
-  "mrmime"
+  "prettym"
   "fmt"
   "logs"
   "ke" {>= "0.4"}
