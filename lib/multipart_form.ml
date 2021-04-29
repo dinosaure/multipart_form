@@ -527,11 +527,12 @@ let parse :
     | Angstrom.Unbuffered.Done (_, tree) -> `Done tree
     | Fail (_, _, msg) -> `Fail msg
     | Partial { committed; continue } ->
+        Ke.Rke.N.shift_exn ke committed ;
+        if committed = 0 then Ke.Rke.compress ke ;
+        Log.debug (fun m -> m "Partial state of the multipart/form stream.") ;
         (match data with
         | `String "" -> ()
         | `String str ->
-            Ke.Rke.N.shift_exn ke committed ;
-            if committed = 0 then Ke.Rke.compress ke ;
             Log.debug (fun m ->
                 m "Capacity of the internal queue: %d byte(s)."
                   (Ke.Rke.capacity ke)) ;
@@ -542,15 +543,22 @@ let parse :
             let[@warning "-8"] (slice :: _) = Ke.Rke.N.peek ke in
             state :=
               continue slice ~off:0 ~len:(Bigstringaf.length slice) Incomplete
-        | `Eof ->
-        match Ke.Rke.N.peek ke with
-        | [] -> state := continue Bigstringaf.empty ~off:0 ~len:0 Complete
-        | [ slice ] ->
-            state :=
-              continue slice ~off:0 ~len:(Bigstringaf.length slice) Complete
-        | slice :: _ ->
-            state :=
-              continue slice ~off:0 ~len:(Bigstringaf.length slice) Incomplete) ;
+        | `Eof -> (
+            Log.debug (fun m -> m "End of input.") ;
+            match Ke.Rke.N.peek ke with
+            | [] ->
+                Log.debug (fun m -> m "No more payloads.") ;
+                state := continue Bigstringaf.empty ~off:0 ~len:0 Complete
+            | [ slice ] ->
+                Log.debug (fun m ->
+                    m "Remain one payload: %S" (Bigstringaf.to_string slice)) ;
+                state :=
+                  continue slice ~off:0 ~len:(Bigstringaf.length slice) Complete
+            | slice :: _ ->
+                Log.debug (fun m -> m "Remain multiple payloads") ;
+                state :=
+                  continue slice ~off:0 ~len:(Bigstringaf.length slice)
+                    Incomplete)) ;
         `Continue
 
 let of_stream_tbl stream content_type =

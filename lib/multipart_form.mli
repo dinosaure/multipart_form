@@ -198,6 +198,7 @@ module Header : sig
      if it exists. *)
 
   val to_list : t -> Field.field list
+  (** [to_list hdr] returns the list of fields into the given [hdr] header. *)
 
   val pp : t Fmt.t
 
