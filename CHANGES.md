@@ -1,3 +1,10 @@
+### v0.3.0 2021-05-11 (Paris)
+
+- Add some `of_string`/`to_string` functions (@dinosaure, #15)
+- Add tests about content-type parser (@dinosaure, #16)
+- Use `prettym` package instead of `mrmime.prettym` (@dinosaure, #17)
+- Fix infinite loop for large upload (@dinosaure, #18)
+
 ### v0.2.0 2021-04-19 (Paris)
 
 - Add an encoder of `multipart/form-data` (@dinosaure, #9)
