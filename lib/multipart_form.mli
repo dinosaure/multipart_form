@@ -89,6 +89,10 @@ module Content_type : sig
   val pp : t Fmt.t
 
   val of_string : string -> (t, [> `Msg of string ]) result
+  (** [of_string str] returns the [Content-Type] value from a string
+      which come from your HTTP stack. {b NOTE}: the string {b must}
+      finish with ["\r\n"]. If you are not sure about the value
+      returned by your HTTP stack, you should append it. *)
 
   val to_string : t -> string
 end
@@ -304,8 +308,8 @@ val of_stream_to_list :
   Content_type.t ->
   (int t * (int * string) list, [> `Msg of string ]) result
 (** [of_stream_to_list stream content_type] returns, if it succeeds, a pair of a
-   value {!t} and an associative list {!a}. The multipart document {!t}
-   references parts using unique IDs (integers) and {!a} associates these IDs to
+   value {!t} and an associative list of contents. The multipart document {!t}
+   references parts using unique IDs (integers) and associates these IDs to
    the respective contents of each part, stored as a string. *)
 
 val of_string_to_list :

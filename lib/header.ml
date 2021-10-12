@@ -1,6 +1,6 @@
 type t = Field.field list
 
-let pp = Fmt.(list ~sep:(always "@\n") Field.pp)
+let pp = Fmt.(list ~sep:(any "@\n") Field.pp)
 
 let assoc field_name header =
   let f acc (Field.Field (field_name', _, _) as field) =

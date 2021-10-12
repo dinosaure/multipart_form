@@ -43,18 +43,18 @@ let pp ppf t =
     pp_disposition_type t.ty
     Fmt.(option string)
     t.filename
-    Fmt.(option (unit "#date"))
+    Fmt.(option (any "#date"))
     t.creation
-    Fmt.(option (unit "#date"))
+    Fmt.(option (any "#date"))
     t.modification
-    Fmt.(option (unit "#date"))
+    Fmt.(option (any "#date"))
     t.read
     Fmt.(option int)
     t.size
     Fmt.(
       Dump.iter_bindings
         (fun f -> List.iter (fun (k, v) -> f k v))
-        (always "parameters") string pp_value)
+        (any "parameters") string pp_value)
     t.parameters
 
 let name t =
@@ -190,9 +190,9 @@ module Decoder = struct
         true
     | _ -> false
 
-  let invalid_token token = Fmt.kstrf fail "invalid token: %s" token
+  let invalid_token token = Fmt.kstr fail "invalid token: %s" token
 
-  let nothing_to_do = Fmt.kstrf fail "nothing to do"
+  let nothing_to_do = Fmt.kstr fail "nothing to do"
 
   (* / *)
 

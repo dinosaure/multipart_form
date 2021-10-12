@@ -435,7 +435,7 @@ let content_encoding fields =
     !encoding
   with Found -> !encoding
 
-let failf fmt = Fmt.kstrf Angstrom.fail fmt
+let failf fmt = Fmt.kstr Angstrom.fail fmt
 
 let octet ~emitter boundary header =
   let open Angstrom in
