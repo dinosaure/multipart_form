@@ -57,6 +57,6 @@ val of_stream_to_tree :
   Content_type.t ->
   (string t, [> `Msg of string ]) result Lwt.t
 (** [of_stream_to_tree stream content_type] returns, if it succeeds, a value
-   {!t} representing the multipart document, where the contents of the parts are
+   {!Multipart_form.t} representing the multipart document, where the contents of the parts are
    stored as strings. It is equivalent to [of_stream_to_list] where references
    have been replaced with their associated contents. *)
