@@ -89,6 +89,10 @@ module Content_type : sig
   val pp : t Fmt.t
 
   val of_string : string -> (t, [> `Msg of string ]) result
+  (** [of_string str] returns the [Content-Type] value from a string
+      which come from your HTTP stack. {b NOTE}: the string {b must}
+      finish with ["\r\n"]. If you are not sure about the value
+      returned by your HTTP stack, you should append it. *)
 
   val to_string : t -> string
 end
