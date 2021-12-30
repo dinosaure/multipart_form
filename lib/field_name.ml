@@ -45,7 +45,6 @@ let of_string_exn x =
   | Error (`Msg err) -> Fmt.invalid_arg "%s" err
 
 let v = of_string_exn
-
 let pp = Fmt.using capitalize Fmt.string
 
 let prefixed_by prefix field =
@@ -72,7 +71,5 @@ module Map = Map.Make (String)
 module Set = Set.Make (String)
 
 let content_type = "Content-Type"
-
 let content_transfer_encoding = "Content-Transfer-Encoding"
-
 let content_disposition = "Content-Disposition"

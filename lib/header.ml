@@ -20,9 +20,7 @@ let exists field_name t =
     t
 
 let empty = []
-
 let concat a b = a @ b
-
 let to_list x = x
 
 let add : type a. Field_name.t -> a Field.t * a -> t -> t =
@@ -37,7 +35,6 @@ let replace : type a. Field_name.t -> a Field.t * a -> t -> t =
   field :: header
 
 let of_list x = x
-
 let of_list_with_location x = x
 
 let content_type header =
@@ -89,8 +86,6 @@ module Encoder = struct
   include Prettym
 
   let noop = ((fun ppf () -> ppf), ())
-
   let field ppf x = Field.Encoder.field ppf x
-
   let header ppf x = (list ~sep:noop field) ppf x
 end

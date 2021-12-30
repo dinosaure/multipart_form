@@ -7,7 +7,6 @@ type 'a t =
   | Field : Unstrctrd.t t
 
 type witness = Witness : 'a t -> witness
-
 type field = Field : Field_name.t * 'a t * 'a -> field
 
 let pp_unstrctrd ppf v = Fmt.string ppf (Unstrctrd.to_utf_8_string v)
