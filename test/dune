@@ -1,11 +1,27 @@
 (executable
  (name test)
+ (modules test)
  (libraries rosetta unstrctrd unstrctrd.parser alcotest fmt rresult result
    angstrom multipart_form))
 
+(executable
+ (name test_lwt)
+ (modules test_lwt)
+ (libraries fmt fmt.tty logs logs.fmt alcotest alcotest-lwt lwt
+   multipart_form multipart_form-lwt))
+
 (rule
  (alias runtest)
+ (package multipart_form)
  (deps
   (:test test.exe))
+ (action
+  (run %{test} --color=always)))
+
+(rule
+ (alias runtest)
+ (package multipart_form-lwt)
+ (deps
+  (:test test_lwt.exe))
  (action
   (run %{test} --color=always)))

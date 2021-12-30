@@ -142,7 +142,7 @@ module RAW = struct
           advance 1 *> commit *> m in
 
     available >>= function
-    | 0 -> peek_char *> m
+    | 0 -> ( peek_char >>= function None -> return () | Some _ -> m)
     | len -> (
         Unsafe.peek len Bigstringaf.sub >>= fun chunk ->
         match index chunk end_of_body.[0] with

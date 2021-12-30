@@ -20,11 +20,13 @@ depends: [
   "lwt" 
   "result"
   "multipart_form" {= version}
+  "alcotest-lwt" {with-test}
   "alcotest" {with-test}
   "fmt" {with-test}
   "rosetta" {with-test}
   "rresult" {with-test}
   "unstrctrd" {with-test}
+  "logs" {with-test}
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
