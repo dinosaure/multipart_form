@@ -12,7 +12,6 @@ type t = {
 }
 
 and value = String of string | Token of string
-
 and date = unit
 
 let v ?filename ?(kind = `Ietf_token "form-data") ?size name =
@@ -63,9 +62,7 @@ let name t =
   | None -> None
 
 let filename { filename; _ } = filename
-
 let size { size; _ } = size
-
 let disposition_type { ty; _ } = ty
 
 let of_escaped_character = function
@@ -92,11 +89,8 @@ module Rfc2045 = struct
   open Angstrom
 
   let _3 x y z = (x, y, z)
-
   let _4 a b c d = (a, b, c, d)
-
   let ( .![]<- ) = Bytes.set
-
   let utf_8_tail = satisfy @@ function '\x80' .. '\xbf' -> true | _ -> false
 
   let utf_8_0 =
@@ -191,13 +185,11 @@ module Decoder = struct
     | _ -> false
 
   let invalid_token token = Fmt.kstr fail "invalid token: %s" token
-
   let nothing_to_do = Fmt.kstr fail "nothing to do"
 
   (* / *)
 
   let is_ctl = function '\000' .. '\031' | '\127' -> true | _ -> false
-
   let is_space = ( = ) ' '
 
   (* From RFC 2045
@@ -211,7 +203,6 @@ module Decoder = struct
     is_ascii c && (not (is_tspecials c)) && (not (is_ctl c)) && not (is_space c)
 
   let token = take_while1 is_token
-
   let is_digit = function '0' .. '9' -> true | _ -> false
 
   (* From RFC 2045
@@ -289,13 +280,9 @@ module Decoder = struct
     string parm *> skip_while is_wsp *> char '=' *> skip_while is_wsp *> value
 
   let filename_parm = parm "filename" value
-
   let creation_date_parm = parm "creation-date" quoted_date_time
-
   let modification_date_parm = parm "modification-date" quoted_date_time
-
   let read_date_parm = parm "read-date" quoted_date_time
-
   let size_parm = parm "read-date" (take_while1 is_digit >>| int_of_string)
 
   let disposition_parm =

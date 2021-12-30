@@ -28,13 +28,9 @@ let is_bchars = function ' ' -> true | c -> is_bcharsnospace c
                       ; Content-Type field.
 *)
 let make_dash_boundary boundary = "--" ^ boundary
-
 let dash_boundary boundary = string (make_dash_boundary boundary)
-
 let make_delimiter boundary = "\r\n" ^ make_dash_boundary boundary
-
 let make_close_delimiter boundary = make_delimiter boundary ^ "--"
-
 let close_delimiter boundary = string (make_close_delimiter boundary)
 
 (* NOTE: this parser terminate at the boundary, however it does not consume it. *)
@@ -79,7 +75,6 @@ let discard_all_to_delimiter boundary =
   | None -> return ()
 
 let nothing_to_do = Fmt.kstr fail "nothing to do"
-
 let crlf = char '\r' *> char '\n'
 
 let body_part body =

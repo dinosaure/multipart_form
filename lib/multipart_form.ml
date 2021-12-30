@@ -3,7 +3,6 @@ open Stdlib
 let src = Logs.Src.create "multipart-form"
 
 module Log = (val Logs.src_log src : Logs.LOG)
-
 module Field_name = Field_name
 module Field = Field
 module Header = Header
@@ -303,7 +302,6 @@ module QP = struct
 end
 
 type 'a elt = { header : Header.t; body : 'a }
-
 type 'a t = Leaf of 'a elt | Multipart of 'a t option list elt
 
 let rec map f = function
@@ -478,7 +476,6 @@ let octet ~emitter boundary header =
       return ()
 
 type 'id emitters = Header.t -> (string option -> unit) * 'id
-
 type discrete = [ `Text | `Image | `Audio | `Video | `Application ]
 
 let boundary header =
@@ -613,7 +610,6 @@ let of_string_to_tree str content_type =
   of_stream_to_tree (stream_of_string str) content_type
 
 type part = { header : Header.t; body : (string * int * int) stream }
-
 type multipart = { header : Header.t; parts : part list }
 
 let part ?(header = Header.empty) ?disposition ?encoding stream =
