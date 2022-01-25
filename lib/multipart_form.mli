@@ -52,10 +52,18 @@ module Content_type : sig
     type t = value Map.t
 
     val key : string -> (key, [> `Msg of string ]) result
+    val key_exn : string -> key
+    val k : string -> key
+
     val value : string -> (value, [> `Msg of string ]) result
+    val value_exn : string -> value
+    val v : string -> value
+
     val add : key -> value -> t -> t
     val empty : t
     val pp : t Fmt.t
+    val of_list : (key * value) list -> t
+    val to_list : t -> (key * value) list
   end
 
   type t = {
