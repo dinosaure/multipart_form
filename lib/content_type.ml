@@ -35,9 +35,7 @@ let is_obs_no_ws_ctl = function
   | '\001' .. '\008' | '\011' | '\012' | '\014' .. '\031' | '\127' -> true
   | _ -> false
 
-let is_qtext = function
-  | '\r' | '\\' | '"' -> false
-  | _ -> true
+let is_qtext = function '\r' | '\\' | '"' -> false | _ -> true
 
 module Type = struct
   type discrete = [ `Text | `Image | `Audio | `Video | `Application ]

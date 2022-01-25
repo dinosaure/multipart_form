@@ -54,11 +54,9 @@ module Content_type : sig
     val key : string -> (key, [> `Msg of string ]) result
     val key_exn : string -> key
     val k : string -> key
-
     val value : string -> (value, [> `Msg of string ]) result
     val value_exn : string -> value
     val v : string -> value
-
     val add : key -> value -> t -> t
     val empty : t
     val pp : t Fmt.t

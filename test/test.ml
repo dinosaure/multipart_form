@@ -115,14 +115,16 @@ let to_map ~assoc m =
   let open Multipart_form in
   let rec go (map, rest) = function
     | Leaf { header; body } -> (
-        let filename = Option.bind (Header.content_disposition header) Content_disposition.filename in
+        let filename =
+          Option.bind
+            (Header.content_disposition header)
+            Content_disposition.filename in
         match
           Option.bind
             (Header.content_disposition header)
             Content_disposition.name
         with
-        | Some name ->
-          (Map.add name (filename, List.assoc body assoc) map, rest)
+        | Some name -> (Map.add name (filename, List.assoc body assoc) map, rest)
         | None -> (map, (body, (filename, List.assoc body assoc)) :: rest))
     | Multipart { body; _ } ->
         let fold acc = function Some elt -> go acc elt | None -> acc in
@@ -144,10 +146,13 @@ let simple_with_helpers =
       Alcotest.(check int) "unamed values" (List.length r) 0 ;
       Alcotest.(check string) "text" (snd (List.assoc "text" m)) "default" ;
       Alcotest.(check string)
-        "file1" (snd (List.assoc "file1" m))
+        "file1"
+        (snd (List.assoc "file1" m))
         "<!DOCTYPE html><title>Content of a.html.</title>\n" ;
       Alcotest.(check string)
-        "file2" (snd (List.assoc "file2" m)) "Content of a.txt.\n"
+        "file2"
+        (snd (List.assoc "file2" m))
+        "Content of a.txt.\n"
   | Error (`Msg err) -> Alcotest.fail err
 
 let stream_of_string x =
@@ -203,10 +208,13 @@ let make_simple_multipart =
       let m, _ = to_map ~assoc m in
       let m = Map.bindings m in
       Alcotest.(check string)
-        "file1" (snd (List.assoc "file1" m))
+        "file1"
+        (snd (List.assoc "file1" m))
         "<!DOCTYPE html><title>Content of a.html.</title>\n" ;
       Alcotest.(check string)
-        "file2" (snd (List.assoc "file2" m)) "Content of a.txt.\n"
+        "file2"
+        (snd (List.assoc "file2" m))
+        "Content of a.txt.\n"
   | Error (`Msg err) -> Alcotest.fail err
 
 let parse_content_type x = Multipart_form.Content_type.of_string (x ^ "\r\n")
@@ -254,7 +262,7 @@ let content_type_2 =
   Rresult.R.get_ok value
 
 let contents =
-{multipart|
+  {multipart|
 -----------------------------11410681503802810592492044004
 Content-Disposition: form-data; name="dream.csrf"
 
@@ -277,17 +285,19 @@ let filename_with_space =
   let content_type =
     let open Multipart_form.Content_type in
     make `Multipart (`Iana_token "form-data")
-      Parameters.(add
-        (key_exn "boundary")
-        (value_exn "---------------------------11410681503802810592492044004")
-        Map.empty) in
+      Parameters.(
+        add (key_exn "boundary")
+          (value_exn "---------------------------11410681503802810592492044004")
+          Map.empty) in
   match Multipart_form.of_string_to_list contents content_type with
   | Ok (m, assoc) ->
-    let map, _ = to_map ~assoc m in
-    Alcotest.(check bool) "files"
-      (Map.exists (fun str _ -> str = "files") map) true ;
-    let filename, _body = Map.find "files" map in
-    Alcotest.(check (option string)) "filename" (Some "a b.txt") filename
+      let map, _ = to_map ~assoc m in
+      Alcotest.(check bool)
+        "files"
+        (Map.exists (fun str _ -> str = "files") map)
+        true ;
+      let filename, _body = Map.find "files" map in
+      Alcotest.(check (option string)) "filename" (Some "a b.txt") filename
   | Error (`Msg err) -> Alcotest.failf "parser: %s." err
 
 let () =
