@@ -1,3 +1,11 @@
+### v0.4.0 2022-01-25 (Paris)
+
+- Split the distribution into two packages: `multipart_form{,-lwt}` (@dinosaure, @leviroth, #23)
+- Documentation about `Content-Type` (@dinosaure, #24)
+- Upgrade the distribution with few new releases (@dinosaure, #24)
+- Add a test about the lwt support (@dinosaure, @taiseiKMC, #25, #27)
+- Allow filenames with space (@dinosaure, @aantron, @cemerick, #28)
+
 ### v0.3.0 2021-05-11 (Paris)
 
 - Add some `of_string`/`to_string` functions (@dinosaure, #15)
