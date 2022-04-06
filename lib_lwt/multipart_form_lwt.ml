@@ -42,10 +42,10 @@ let stream ?(bounds = 10) ~identify stream content_type =
               let client_id, _, _ = Hashtbl.find tbl id in
               client_id in
             push None ;
-            Lwt.return_ok (map client_id_of_id t)
+            Lwt.return (Ok (map client_id_of_id t))
         | `Fail _ ->
             push None ;
-            Lwt.return_error (`Msg "Invalid multipart/form")) in
+            Lwt.return (Error (`Msg "Invalid multipart/form"))) in
   (`Parse (go ()), output)
 
 (* only used internally to implement of_stream_to_{tree,list} *)

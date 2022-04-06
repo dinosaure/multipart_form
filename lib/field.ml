@@ -1,5 +1,3 @@
-open Stdlib
-
 type 'a t =
   | Content_type : Content_type.t t
   | Content_encoding : Content_encoding.t t
