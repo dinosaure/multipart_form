@@ -14,11 +14,9 @@ depends: [
   "ocaml" {>= "4.08.0"}
   "dune" {>= "2.0.0"}
   "angstrom"
-  "bigarray-compat"
   "bigstringaf"
   "ke"
-  "lwt" 
-  "result"
+  "lwt"
   "multipart_form" {= version}
   "alcotest-lwt" {with-test}
   "alcotest" {with-test}

@@ -18,7 +18,6 @@ depends: [
   "unstrctrd" {>= "0.2"}
   "rresult"
   "uutf"
-  "stdlib-shims"
   "pecu" {>= "0.4"}
   "prettym"
   "fmt" {>= "0.8.7"}
@@ -26,12 +25,15 @@ depends: [
   "ke" {>= "0.4"}
   "alcotest" {with-test}
   "rosetta" {with-test}
-  "bigarray-compat" {>= "1.0.0"}
   "bigstringaf" {>= "0.7.0"}
-  "result" {>= "1.5"}
 ]
+conflicts: [ "result" {< "1.5"} ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
   ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
 dev-repo: "git+https://github.com/dinosaure/multipart_form.git"
+pin-depends: [
+  ["ke.0.99" "git+https://github.com/hannesm/ke.git#2cf90ee3a51a997e1456d0bbdc52c9cf97ceb246"]
+  ["bigstringaf.0.99" "git+https://github.com/hannesm/bigstringaf.git#be6935ce3a6b6f9627a624e38937b088c12998cb"]
+]
