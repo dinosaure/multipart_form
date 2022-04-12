@@ -25,7 +25,7 @@ depends: [
   "ke" {>= "0.4"}
   "alcotest" {with-test}
   "rosetta" {with-test}
-  "bigstringaf" {>= "0.7.0"}
+  "bigstringaf" {>= "0.9.0"}
 ]
 conflicts: [ "result" {< "1.5"} ]
 build: [
@@ -33,7 +33,3 @@ build: [
   ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
 dev-repo: "git+https://github.com/dinosaure/multipart_form.git"
-pin-depends: [
-  ["ke.0.99" "git+https://github.com/hannesm/ke.git#2cf90ee3a51a997e1456d0bbdc52c9cf97ceb246"]
-  ["bigstringaf.0.99" "git+https://github.com/hannesm/bigstringaf.git#be6935ce3a6b6f9627a624e38937b088c12998cb"]
-]

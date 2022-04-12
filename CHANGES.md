@@ -1,3 +1,8 @@
+### v0.4.1 2022-04-07 (Paris)
+
+- Remove redundant `bigarray` dependency (@patricoferris, #29)
+- Remove `bigarray-compat` and `stdlib-shims` and support only OCaml >= 4.08 (@hannesm, #30)
+
 ### v0.4.0 2022-01-25 (Paris)
 
 - Split the distribution into two packages: `multipart_form{,-lwt}` (@dinosaure, @leviroth, #23)
