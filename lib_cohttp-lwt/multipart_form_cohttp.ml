@@ -17,14 +17,11 @@ let to_cohttp_header header =
 module Client = struct
   let multipart_form v =
     let header, stream = Multipart_form.to_stream v in
-    let response =
-      let headers = to_cohttp_header header in
-      Cohttp.Response.make ~headers () in
     let stream = Lwt_stream.from_direct stream in
     let body =
       Lwt_stream.map (fun (str, off, len) -> String.sub str off len) stream
     in
-    (response, `Stream body)
+    (to_cohttp_header header, `Stream body)
 end
 
 let ( <.> ) f g x = f (g x)
@@ -39,6 +36,8 @@ module Server = struct
         m "Got an exception when we tried to parsed a multipart/form: %S"
           (Printexc.to_string exn))
 
+  exception Invalid_multipart_form of string
+
   let handler_thread th wk () =
     let open Lwt.Infix in
     th >>= function
@@ -47,6 +46,7 @@ module Server = struct
         Lwt.return_unit
     | Error (`Msg msg) ->
         Log.err (fun m -> m "Invalid multipart/form request: %s" msg) ;
+        Lwt.wakeup_exn wk (Invalid_multipart_form msg);
         Lwt.return_unit
 
   let multipart_form ~identify req body =
