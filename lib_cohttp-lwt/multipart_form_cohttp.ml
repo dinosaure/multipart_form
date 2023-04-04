@@ -46,7 +46,7 @@ module Server = struct
         Lwt.return_unit
     | Error (`Msg msg) ->
         Log.err (fun m -> m "Invalid multipart/form request: %s" msg) ;
-        Lwt.wakeup_exn wk (Invalid_multipart_form msg);
+        Lwt.wakeup_exn wk (Invalid_multipart_form msg) ;
         Lwt.return_unit
 
   let multipart_form ~identify req body =
