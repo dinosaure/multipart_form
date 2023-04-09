@@ -51,32 +51,38 @@ Content-Type: text/plain
 
 Conten|}
 
-open Lwt.Infix
-
 let always v _ = v
 
 let test01 =
-  Alcotest_lwt.test_case "truncated flow (with CRLF)" `Quick
-  @@ fun _switch () ->
+  Alcotest.test_case "truncated flow (with CRLF)" `Quick
+  @@ fun _ -> Eio_main.run
+  @@ fun _ -> Eio.Switch.run
+  @@ fun sw ->
   let content_type =
     "multipart/form-data; boundary=------------------------eb790219f130e103\r\n"
   in
   let content_type =
     match Multipart_form.Content_type.of_string content_type with
     | Ok v -> v
-    | Error (`Msg err) -> failwith err in
-  let body = Lwt_stream.return truncated_request01 in
-  let `Parse th, _ =
-    Multipart_form_lwt.stream ~identify:(always ()) body content_type in
-  th >>= function
+    | Error (`Msg err) -> failwith err
+  in
+  let body = Eio.Stream.create max_int in
+  Eio.Stream.add body truncated_request01;
+  let th =
+    Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
+    |> fst
+  in
+  Printf.printf "Got till promise!\n%!";
+  match Eio.Promise.await th with
   | Ok _ ->
-      Alcotest.(check pass) "Truncated request" () () ;
-      Lwt.return_unit
+      Alcotest.(check pass) "Truncated request" () ()
   | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s" err
 
 let test02 =
-  Alcotest_lwt.test_case "truncated flow (without CRLF)" `Quick
-  @@ fun _switch () ->
+  Alcotest.test_case "truncated flow (without CRLF)" `Quick
+  @@ fun _ -> Eio_main.run
+  @@ fun _ -> Eio.Switch.run
+  @@ fun sw ->
   let content_type =
     "multipart/form-data; boundary=------------------------eb790219f130e103\r\n"
   in
@@ -84,17 +90,18 @@ let test02 =
     match Multipart_form.Content_type.of_string content_type with
     | Ok v -> v
     | Error (`Msg err) -> failwith err in
-  let body = Lwt_stream.return truncated_request02 in
-  let `Parse th, _ =
-    Multipart_form_lwt.stream ~identify:(always ()) body content_type in
-  th >>= function
+  let body = Eio.Stream.create max_int in
+  Eio.Stream.add body truncated_request02;
+  let th =
+    Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
+    |> fst
+    |> Eio.Promise.await
+  in
+  match th with
   | Ok _ -> Alcotest.fail "Unexpected valid input"
   | Error (`Msg "Invalid multipart/form") ->
-      Alcotest.(check pass) "truncated input" () () ;
-      Lwt.return_unit
+      Alcotest.(check pass) "truncated input" () ()
   | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s." err
 
-let th =
-  Alcotest_lwt.run "multipart_form_lwt" [ ("truncated", [ test01; test02 ]) ]
-
-let () = Lwt_main.run th
+let () =
+  Alcotest.run "multipart_form_eio" [ ("truncated", [ test01; test02]) ]

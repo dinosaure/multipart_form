@@ -13,7 +13,7 @@
 (executable
  (name test_eio)
  (modules test_eio)
- (libraries fmt fmt.tty logs logs.fmt alcotest eio
+ (libraries fmt fmt.tty logs logs.fmt alcotest eio eio_main
    multipart_form multipart_form-eio))
 
 (rule

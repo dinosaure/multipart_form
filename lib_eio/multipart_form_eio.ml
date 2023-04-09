@@ -8,40 +8,43 @@ let stream ~sw ?(bounds = 10) ~identify stream content_type =
     fun () ->
       incr r ;
       !r in
-  let tbl = Hashtbl.create 0x10 in
   let emitters header =
     let id = fresh_id () in
-    Queue.push (`Id (header, id)) q ;
-    ((fun data -> Queue.push (`Data (id, data)) q), id) in
+    Queue.push (`Id (header, id)) q;
+    let push = function
+      | None -> ()
+      | Some data -> Queue.push (`Data (id, data)) q
+    in
+    (push, id)
+  in
   let parse = Multipart_form.parse ~emitters content_type in
   let promise, resolve = Eio.Promise.create () in
+  let tbl = Hashtbl.create 0x10 in
   let rec go () =
     match Queue.pop q with
     | `Id (header, id) ->
-        let client_id = identify header in
-        let stream = Eio.Stream.create bounds in
-        Hashtbl.add tbl id (client_id, stream) ;
-        Eio.Stream.add output (client_id, header, stream);
-        go ()
-    | `Data (id, Some data) ->
-        let _, stream = Hashtbl.find tbl id in
-        Eio.Stream.add stream data;
-        go ()
-    | `Data (_, None) ->
-      (* We do not need to manually close the stream as eio takes care of it for us *)
-        go ()
+      let client_id = identify header in
+      let stream = Eio.Stream.create bounds in
+      Hashtbl.add tbl id (client_id, stream) ;
+      Eio.Stream.add output (client_id, header, stream);
+      go ()
+    | `Data (id, data) ->
+      let _, stream = Hashtbl.find tbl id in
+      Eio.Stream.add stream data;
+      go ()
     | exception Queue.Empty -> (
         (* otherwise, continue parsing (thus adding elements to the queue) *)
-        let data = match Eio.Stream.take stream with Some s -> `String s | None -> `Eof in
+        let data = match Eio.Stream.take_nonblocking stream with Some s -> `String s | None -> `Eof in
         match parse data with
-        | `Continue -> go ()
+        | `Continue ->
+          go ()
         | `Done t ->
-            let client_id_of_id id =
-              let client_id, _ = Hashtbl.find tbl id in
-              client_id in
-            Eio.Promise.resolve_ok resolve (map client_id_of_id t)
+          let client_id_of_id id =
+            let client_id, _ = Hashtbl.find tbl id in
+            client_id in
+          Eio.Promise.resolve_ok resolve (map client_id_of_id t)
         | `Fail _ ->
-            Eio.Promise.resolve_error resolve (`Msg "Invalid multipart/form"))
+          Eio.Promise.resolve_error resolve (`Msg "Invalid multipart/form"))
   in
   Eio.Fiber.fork ~sw go;
   (promise, output)
