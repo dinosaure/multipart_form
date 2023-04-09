@@ -1,0 +1,4 @@
+(library
+ (name multipart_form_eio)
+ (public_name multipart_form-eio)
+ (libraries bigstringaf angstrom multipart_form unix eio ke))
