@@ -28,8 +28,7 @@ let stream ~sw ?(bounds = 10) ~identify stream content_type =
         Eio.Stream.add stream data;
         go ()
     | `Data (_, None) ->
-        (* let _, stream = Hashtbl.find tbl id in *)
-        (* stream#close; *)
+      (* We do not need to manually close the stream as eio takes care of it for us *)
         go ()
     | exception Queue.Empty -> (
         (* otherwise, continue parsing (thus adding elements to the queue) *)

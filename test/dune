@@ -10,6 +10,12 @@
  (libraries fmt fmt.tty logs logs.fmt alcotest alcotest-lwt lwt
    multipart_form multipart_form-lwt))
 
+(executable
+ (name test_eio)
+ (modules test_eio)
+ (libraries fmt fmt.tty logs logs.fmt alcotest eio
+   multipart_form multipart_form-eio))
+
 (rule
  (alias runtest)
  (package multipart_form)
