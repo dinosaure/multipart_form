@@ -1,3 +1,5 @@
+let error_msgf fmt = Fmt.kstr (fun msg -> Error (`Msg msg)) fmt
+
 exception Invalid_token
 
 (* From RFC 2045
@@ -55,9 +57,7 @@ module Type = struct
 
   let extension token =
     if String.length token < 3
-    then
-      Rresult.R.error_msgf "Extension token MUST have, at least, 3 bytes: %S"
-        token
+    then error_msgf "Extension token MUST have, at least, 3 bytes: %S" token
     else
       match (token.[0], token.[1]) with
       | ('x' | 'X'), '-' -> (
@@ -67,11 +67,8 @@ module Type = struct
               (String.sub token 2 (String.length token - 2)) ;
             Ok (`X_token token)
           with Invalid_token ->
-            Rresult.R.error_msgf "Extension token %S does not respect standards"
-              token)
-      | _ ->
-          Rresult.R.error_msgf "An extension token MUST be prefixed by [X-]: %S"
-            token
+            error_msgf "Extension token %S does not respect standards" token)
+      | _ -> error_msgf "An extension token MUST be prefixed by [X-]: %S" token
 
   let pp ppf = function
     | `Text -> Fmt.string ppf "text"
@@ -116,9 +113,7 @@ module Subtype = struct
 
   let extension token =
     if String.length token < 3
-    then
-      Rresult.R.error_msgf "Extension token MUST have, at least, 3 bytes: %S"
-        token
+    then error_msgf "Extension token MUST have, at least, 3 bytes: %S" token
     else
       match (token.[0], token.[1]) with
       | ('x' | 'X'), '-' -> (
@@ -128,11 +123,8 @@ module Subtype = struct
               (String.sub token 2 (String.length token - 2)) ;
             Ok (`X_token token)
           with Invalid_token ->
-            Rresult.R.error_msgf "Extension token %S does not respect standards"
-              token)
-      | _ ->
-          Rresult.R.error_msgf "An extension token MUST be prefixed by [X-]: %S"
-            token
+            error_msgf "Extension token %S does not respect standards" token)
+      | _ -> error_msgf "An extension token MUST be prefixed by [X-]: %S" token
 
   let pp ppf = function
     | `Ietf_token token -> Fmt.pf ppf "ietf:%s" token
@@ -166,8 +158,7 @@ module Parameters = struct
         (fun chr -> if not (is_token chr) then raise Invalid_token)
         key ;
       Ok (String.lowercase_ascii key)
-    with Invalid_token ->
-      Rresult.R.error_msgf "Key %S does not respect standards" key
+    with Invalid_token -> error_msgf "Key %S does not respect standards" key
 
   let key_exn x =
     match key x with Ok v -> v | Error (`Msg err) -> invalid_arg err
@@ -183,8 +174,8 @@ module Parameters = struct
           (fun chr -> if not (is_token chr) then raise Invalid_token)
           x ;
         Ok (Token x)
-      with Invalid_token ->
-        Rresult.R.error_msgf "Value %S does not respect standards" v in
+      with Invalid_token -> error_msgf "Value %S does not respect standards" v
+    in
 
     (* XXX(dinosaure): [is_quoted_pair] accepts characters \000-\127. UTF-8
        extends to \000-\255. However, qtext invalids some of them: \009, \010,
@@ -222,7 +213,7 @@ module Parameters = struct
           () x ;
         Ok x
       with Invalid_utf_8 ->
-        Rresult.R.error_msgf "Value %S is not a valid UTF-8 string" x in
+        error_msgf "Value %S is not a valid UTF-8 string" x in
     match to_token v with
     | Ok _ as v -> v
     | Error _ ->
@@ -240,7 +231,8 @@ module Parameters = struct
            However, order is really important semantically. UTF-8 -> escape
            expects a special process to decoder (escape -> UTF-8). About history,
            unicorn and so on, it should be the best to keep this order. *)
-        Rresult.R.(utf_8 v >>| escape_characters >>| fun x -> String x)
+        let ( >>| ) x f = Result.map f x in
+        utf_8 v >>| escape_characters >>| fun x -> String x
 
   let value_exn x =
     match value x with Ok v -> v | Error (`Msg err) -> invalid_arg err
@@ -565,7 +557,7 @@ module Decoder = struct
 end
 
 let of_string str =
-  let open Rresult in
+  let ( >>= ) = Result.bind and ( >>| ) x f = Result.map f x in
   Unstrctrd.of_string str
   >>| (fun (_, v) -> Unstrctrd.fold_fws v)
   >>= Unstrctrd.without_comments
@@ -573,7 +565,7 @@ let of_string str =
   >>= fun str ->
   match Angstrom.parse_string ~consume:Prefix Decoder.content str with
   | Ok v -> Ok v
-  | Error _ -> R.error_msgf "Invalid (unfolded) Content-Type value: %S" str
+  | Error _ -> error_msgf "Invalid (unfolded) Content-Type value: %S" str
 
 module Encoder = struct
   open Prettym

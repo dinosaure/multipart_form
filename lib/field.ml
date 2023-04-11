@@ -51,14 +51,14 @@ module Decoder = struct
       | Some w -> w in
     let parser = parser w in
     let res =
-      let open Rresult in
+      let ( >>= ) = Result.bind and ( >>| ) x f = Result.map f x in
       Unstrctrd.without_comments v
       >>| Unstrctrd.fold_fws
       >>| Unstrctrd.to_utf_8_string
       (* XXX(dinosaure): normalized value can have trailing whitespace
        * such as "value (comment)" returns "value ". Given parser can
        * ignore it (and it does not consume all inputs finally). *)
-      >>= (R.reword_error R.msg
+      >>= (Result.map_error (fun msg -> `Msg msg)
           <.> (parse_string ~consume:Consume.Prefix) parser)
       >>| fun v -> Field (field_name, w, v) in
     match res with

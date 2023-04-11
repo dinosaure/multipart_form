@@ -7,6 +7,8 @@ type t =
   | `Ietf_token of string
   | `X_token of string ]
 
+let error_msgf fmt = Fmt.kstr (fun msg -> Error (`Msg msg)) fmt
+
 let pp ppf = function
   | `Bit7 -> Fmt.string ppf "7bit"
   | `Bit8 -> Fmt.string ppf "8bit"
@@ -29,7 +31,7 @@ let of_string = function
   | "binary" -> Ok `Binary
   | "quoted-printable" -> Ok `Quoted_printable
   | "base64" -> Ok `Base64
-  | x -> Rresult.R.error_msgf "Invalid MIME encoding: %s" x
+  | x -> error_msgf "Invalid MIME encoding: %s" x
 
 (* TODO:
    - let the user to craft an extension token.

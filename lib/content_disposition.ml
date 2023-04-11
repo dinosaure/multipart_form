@@ -14,6 +14,8 @@ type t = {
 and value = String of string | Token of string
 and date = unit
 
+let error_msgf fmt = Fmt.kstr (fun msg -> Error (`Msg msg)) fmt
+
 let v ?filename ?(kind = `Ietf_token "form-data") ?size name =
   {
     ty = kind;
@@ -266,15 +268,14 @@ module Decoder = struct
 end
 
 let of_string str =
-  let open Rresult in
+  let ( >>= ) = Result.bind and ( >>| ) x f = Result.map f x in
   Unstrctrd.of_string str
   >>| (fun (_, v) -> Unstrctrd.fold_fws v)
   >>| Unstrctrd.to_utf_8_string
   >>= fun str ->
   match Angstrom.parse_string ~consume:All Decoder.disposition str with
   | Ok v -> Ok v
-  | Error _ ->
-      R.error_msgf "Invalid (unfolded) Content-Disposition value: %S" str
+  | Error _ -> error_msgf "Invalid (unfolded) Content-Disposition value: %S" str
 
 module Encoder = struct
   open Prettym
