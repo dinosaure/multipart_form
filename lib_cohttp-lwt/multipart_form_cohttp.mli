@@ -10,8 +10,8 @@ module Client : sig
         ...
       ]}
 
-      For more details to construct a {!type:Multipart_form.multipart}, take a
-      look on the {!module:Multipart_form}. *)
+      For more details on constructing a {!type:Multipart_form.multipart}, take a
+      look at {!module:Multipart_form}. *)
 end
 
 module Server : sig

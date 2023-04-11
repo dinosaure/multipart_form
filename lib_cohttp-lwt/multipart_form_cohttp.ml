@@ -33,7 +33,7 @@ module Server = struct
 
   let handler_exn exn =
     Log.err (fun m ->
-        m "Got an exception when we tried to parsed a multipart/form: %S"
+        m "Got an exception when trying to parse a multipart/form: %S"
           (Printexc.to_string exn))
 
   exception Invalid_multipart_form of string
