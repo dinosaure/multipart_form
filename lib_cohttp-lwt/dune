@@ -1,0 +1,5 @@
+(library
+ (name multipart_form_cohttp)
+ (public_name multipart_form-cohttp-lwt)
+ (libraries unstrctrd logs lwt cohttp cohttp-lwt multipart_form
+   multipart_form-lwt))

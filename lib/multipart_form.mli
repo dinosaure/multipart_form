@@ -182,6 +182,9 @@ module Header : sig
   val to_list : t -> Field.field list
   (** [to_list hdr] returns the list of fields into the given [hdr] header. *)
 
+  val of_list : Field.field list -> t
+  (** [of_list lst] returns a header from a list of {!type:Field.field}. *)
+
   val pp : t Fmt.t
 
   module Decoder : sig
