@@ -1,3 +1,8 @@
+### v0.5.0 2023-04-11 (Paris)
+
+- Introduce a new package `multipart_form-cohttp-lwt` which provides
+  helpers to use `multipart_form` which CoHTTP (@dinosaure, @shonfeder, #34)
+
 ### v0.4.1 2022-04-07 (Paris)
 
 - Remove redundant `bigarray` dependency (@patricoferris, #29)
