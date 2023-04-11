@@ -2,6 +2,7 @@
 
 - Introduce a new package `multipart_form-cohttp-lwt` which provides
   helpers to use `multipart_form` which CoHTTP (@dinosaure, @shonfeder, #34)
+- Delete the `rresult` dependency (@dinosaure)
 
 ### v0.4.1 2022-04-07 (Paris)
 
