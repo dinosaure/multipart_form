@@ -1,5 +1,7 @@
 type t = string
 
+let error_msgf fmt = Fmt.kstr (fun msg -> Error (`Msg msg)) fmt
+
 let compare a b =
   let a = String.lowercase_ascii a in
   let b = String.lowercase_ascii b in
@@ -37,7 +39,7 @@ let of_string x =
       if not (is_ftext x.[i]) then raise Break
     done ;
     Ok x
-  with Break -> Rresult.R.error_msgf "Invalid field: %S" x
+  with Break -> error_msgf "Invalid field: %S" x
 
 let of_string_exn x =
   match of_string x with

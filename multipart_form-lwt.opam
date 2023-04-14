@@ -16,7 +16,7 @@ depends: [
   "angstrom"
   "bigstringaf"
   "ke"
-  "lwt"
+  "lwt" {>= "5.4.0"}
   "multipart_form" {= version}
   "alcotest-lwt" {with-test}
   "alcotest" {with-test}
