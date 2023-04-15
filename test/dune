@@ -1,17 +1,41 @@
-(test
+(executable
  (name test)
  (modules test)
  (libraries rosetta unstrctrd unstrctrd.parser alcotest fmt rresult result
    angstrom multipart_form))
 
-(test
+(executable
  (name test_lwt)
  (modules test_lwt)
  (libraries fmt fmt.tty logs logs.fmt alcotest alcotest-lwt lwt
    multipart_form multipart_form-lwt))
 
-(test
+(executable
  (name test_eio)
  (modules test_eio)
- (libraries fmt fmt.tty logs logs.fmt alcotest eio eio_main
+ (libraries fmt fmt.tty logs logs.fmt alcotest eio
    multipart_form multipart_form-eio))
+
+(rule
+ (alias runtest)
+ (package multipart_form)
+ (deps
+  (:test test.exe))
+ (action
+  (run %{test} --color=always)))
+
+(rule
+ (alias runtest)
+ (package multipart_form-lwt)
+ (deps
+  (:test test_lwt.exe))
+ (action
+  (run %{test} --color=always)))
+
+(rule
+ (alias runtest)
+ (package multipart_form-eio)
+ (deps
+  (:test test_eio.exe))
+ (action
+  (run %{test} --color=always)))
