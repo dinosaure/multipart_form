@@ -71,9 +71,10 @@ let test01 =
   let th =
     Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
     |> fst
+    |> Eio.Promise.await_exn
   in
   Printf.printf "Got till promise!\n%!";
-  match Eio.Promise.await th with
+  match th with
   | Ok _ ->
       Alcotest.(check pass) "Truncated request" () ()
   | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s" err
@@ -95,7 +96,7 @@ let test02 =
   let th =
     Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
     |> fst
-    |> Eio.Promise.await
+    |> Eio.Promise.await_exn
   in
   match th with
   | Ok _ -> Alcotest.fail "Unexpected valid input"

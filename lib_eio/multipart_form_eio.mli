@@ -8,33 +8,34 @@ val stream :
   identify:(Header.t -> 'id) ->
   string Eio.Stream.t ->
   Content_type.t ->
-  ('id t, [> `Msg of string ]) result Eio.Promise.t
+  ('id t, [> `Msg of string ]) result Eio.Promise.or_exn
   * ('id * Header.t * string Eio.Stream.t) Eio.Stream.t
 (** [stream ~identify src content_type] returns:
     - a promise [th] about the parser
     - a stream [stream] of parts
 
-    They can be manipulated with [Lwt.both], and, by this way,
-    ensure a real stream between the parser [th] and the process
-    which saves parts.
+    To ensure all elements of the stream are consumed, use [Fiber.fork] with
+    same switch that repeatedly [Eio.Stream.take]s from the stream.
+    This ensures that all items are read from the stream.
 
-    Assume that you have a function to save a [Lwt_stream.t] into
+    Assume that you have a function to save a [Eio.stream.t] into
     a [filename]:
     {[
-      val save_part : filename:string -> Header.t -> string Lwt_stream.t ->
-        unit Lwt.t
+      val save_part : filename:string -> Header.t -> string Eio.Stream.t ->
+        unit
     ]}
 
     You can use it with [stream] like:
     {[
+      Eio.Switch.run @@ fun sw ->
       let identify _ : string = random_unique_filename () in
-      let `Parse th, stream = stream ~identify src content_type in
-      let rec saves () = Lwt_stream.get stream >>= function
-        | None -> Lwt.return_unit
-        | Some (filename, hdr, contents) ->
-          save_part ~filename hdr contents >>= fun () ->
-          saves () in
-      Lwt.both th (saves ()) >>= fun (res, ()) -> Lwt.return res
+      let th, stream = stream ~sw ~identify src content_type in
+      let rec saves () =
+        let (filename, hdr, contents) = match Eio.Stream.take stream in
+        save_part ~filename hdr contents;
+        saves () in
+      Eio.Fiber.fork ~sw saves;
+      Eio.Promise.await_exn th
     ]}
 
     By this way, as long as we parse [src], at the same time, we save parts
@@ -51,7 +52,7 @@ val of_stream_to_list :
   Content_type.t ->
   (int t * (int * string) list, [> `Msg of string ]) result
 (** Similar to [Multipart_form.of_stream_to_list], but consumes a
-   [Lwt_stream.t]. *)
+   [Eio.Stream.t]. *)
 
 val of_stream_to_tree :
   string Eio.Stream.t ->

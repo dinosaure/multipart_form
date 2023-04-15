@@ -18,7 +18,6 @@ let stream ~sw ?(bounds = 10) ~identify stream content_type =
     (push, id)
   in
   let parse = Multipart_form.parse ~emitters content_type in
-  let promise, resolve = Eio.Promise.create () in
   let tbl = Hashtbl.create 0x10 in
   let rec go () =
     match Queue.pop q with
@@ -42,12 +41,11 @@ let stream ~sw ?(bounds = 10) ~identify stream content_type =
           let client_id_of_id id =
             let client_id, _ = Hashtbl.find tbl id in
             client_id in
-          Eio.Promise.resolve_ok resolve (map client_id_of_id t)
+          Result.Ok (map client_id_of_id t)
         | `Fail _ ->
-          Eio.Promise.resolve_error resolve (`Msg "Invalid multipart/form"))
+          Result.Error (`Msg "Invalid multipart/form"))
   in
-  Eio.Fiber.fork ~sw go;
-  (promise, output)
+  Eio.Fiber.fork_promise ~sw go, output
 
 (* only used internally to implement of_stream_to_{tree,list} *)
 let of_stream_to_tbl s content_type =
@@ -59,15 +57,14 @@ let of_stream_to_tbl s content_type =
   Eio.Switch.run @@ fun sw ->
   let t, parts = stream ~sw ~identify s content_type in
   let parts_tbl = Hashtbl.create 0x10 in
-  let consume_part (id, _, part_stream) =
+  let rec consume_part () =
+    let (id, _, part_stream) = Eio.Stream.take parts in
     Eio.Stream.take part_stream
-    |> Hashtbl.add parts_tbl id
+    |> Hashtbl.add parts_tbl id;
+    consume_part ()
   in
-  Eio.Fiber.fork ~sw (fun () ->
-      while not @@ Eio.Stream.is_empty parts do
-        Eio.Stream.take parts |> consume_part
-      done);
-  Eio.Promise.await t
+  Eio.Fiber.fork ~sw consume_part;
+  Eio.Promise.await_exn t
   |> Result.map (fun tree -> (tree, parts_tbl))
 
 let of_stream_to_tree s content_type =
