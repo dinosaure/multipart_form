@@ -13,8 +13,8 @@
 (executable
  (name test_eio)
  (modules test_eio)
- (libraries fmt fmt.tty logs logs.fmt alcotest eio_main
-   multipart_form multipart_form-eio))
+ (libraries fmt fmt.tty logs logs.fmt alcotest eio_main multipart_form
+   multipart_form-eio))
 
 (rule
  (alias runtest)

@@ -54,36 +54,9 @@ Conten|}
 let always v _ = v
 
 let test01 =
-  Alcotest.test_case "truncated flow (with CRLF)" `Quick
-  @@ fun _ -> Eio_main.run
-  @@ fun _ -> Eio.Switch.run
-  @@ fun sw ->
-  let content_type =
-    "multipart/form-data; boundary=------------------------eb790219f130e103\r\n"
-  in
-  let content_type =
-    match Multipart_form.Content_type.of_string content_type with
-    | Ok v -> v
-    | Error (`Msg err) -> failwith err
-  in
-  let body = Eio.Stream.create max_int in
-  Eio.Stream.add body truncated_request01;
-  let th =
-    Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
-    |> fst
-    |> Eio.Promise.await_exn
-  in
-  Printf.printf "Got till promise!\n%!";
-  match th with
-  | Ok _ ->
-      Alcotest.(check pass) "Truncated request" () ()
-  | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s" err
-
-let test02 =
-  Alcotest.test_case "truncated flow (without CRLF)" `Quick
-  @@ fun _ -> Eio_main.run
-  @@ fun _ -> Eio.Switch.run
-  @@ fun sw ->
+  Alcotest.test_case "truncated flow (with CRLF)" `Quick @@ fun _ ->
+  Eio_main.run @@ fun _ ->
+  Eio.Switch.run @@ fun sw ->
   let content_type =
     "multipart/form-data; boundary=------------------------eb790219f130e103\r\n"
   in
@@ -92,17 +65,37 @@ let test02 =
     | Ok v -> v
     | Error (`Msg err) -> failwith err in
   let body = Eio.Stream.create max_int in
-  Eio.Stream.add body truncated_request02;
+  Eio.Stream.add body truncated_request01 ;
   let th =
     Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
     |> fst
-    |> Eio.Promise.await_exn
+    |> Eio.Promise.await_exn in
+  Printf.printf "Got till promise!\n%!" ;
+  match th with
+  | Ok _ -> Alcotest.(check pass) "Truncated request" () ()
+  | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s" err
+
+let test02 =
+  Alcotest.test_case "truncated flow (without CRLF)" `Quick @@ fun _ ->
+  Eio_main.run @@ fun _ ->
+  Eio.Switch.run @@ fun sw ->
+  let content_type =
+    "multipart/form-data; boundary=------------------------eb790219f130e103\r\n"
   in
+  let content_type =
+    match Multipart_form.Content_type.of_string content_type with
+    | Ok v -> v
+    | Error (`Msg err) -> failwith err in
+  let body = Eio.Stream.create max_int in
+  Eio.Stream.add body truncated_request02 ;
+  let th =
+    Multipart_form_eio.stream ~sw ~identify:(always ()) body content_type
+    |> fst
+    |> Eio.Promise.await_exn in
   match th with
   | Ok _ -> Alcotest.fail "Unexpected valid input"
   | Error (`Msg "Invalid multipart/form") ->
       Alcotest.(check pass) "truncated input" () ()
   | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s." err
 
-let () =
-  Alcotest.run "multipart_form_eio" [ ("truncated", [ test01; test02]) ]
+let () = Alcotest.run "multipart_form_eio" [ ("truncated", [ test01; test02 ]) ]
