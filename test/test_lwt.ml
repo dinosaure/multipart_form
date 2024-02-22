@@ -18,20 +18,20 @@ let () = Logs.set_reporter (reporter Fmt.stderr)
 let () = Logs.set_level ~all:true (Some Logs.Debug)
 
 let truncated_request01 =
-  {|--------------------------eb790219f130e103
-Content-Disposition: form-data; name="text"
-
-default
---------------------------eb790219f130e103
-Content-Disposition: form-data; name="file1"; filename="a.html"
-Content-Type: text/html
-
-<!DOCTYPE html><title>Content of a.html.</title>
-
---------------------------eb790219f130e103
-Content-Disposition: form-data; name="file2"; filename="a.txt"
-Content-Type: text/plain
-
+  {|--------------------------eb790219f130e103|}^"\r"^{|
+Content-Disposition: form-data; name="text"|}^"\r"^{|
+|}^"\r"^{|
+default|}^"\r"^{|
+--------------------------eb790219f130e103|}^"\r"^{|
+Content-Disposition: form-data; name="file1"; filename="a.html"|}^"\r"^{|
+Content-Type: text/html|}^"\r"^{|
+|}^"\r"^{|
+<!DOCTYPE html><title>Content of a.html.</title>|}^"\r"^{|
+|}^"\r"^{|
+--------------------------eb790219f130e103|}^"\r"^{|
+Content-Disposition: form-data; name="file2"; filename="a.txt"|}^"\r"^{|
+Content-Type: text/plain|}^"\r"^{|
+|}^"\r"^{|
 Conten|}
 
 let truncated_request02 =
