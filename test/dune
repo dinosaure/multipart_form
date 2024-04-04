@@ -1,8 +1,8 @@
 (executable
  (name test)
  (modules test)
- (libraries rosetta unstrctrd unstrctrd.parser alcotest fmt rresult result
-   angstrom multipart_form))
+ (libraries rosetta unstrctrd unstrctrd.parser alcotest fmt rresult angstrom
+   multipart_form))
 
 (executable
  (name test_lwt)
