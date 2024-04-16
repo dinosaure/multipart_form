@@ -1,3 +1,9 @@
+### v0.6.0 2024-04-13 (Enna)
+
+- Introduce a new package `multipart_form-eio` (@Willenbrink, #35)
+- Delete the `result` dependency (@dinosaure, #38)
+- Fix tests for OCaml 5.2 (@kit-ty-kate, #37)
+
 ### v0.5.0 2023-04-11 (Paris)
 
 - Introduce a new package `multipart_form-cohttp-lwt` which provides
