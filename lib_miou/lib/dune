@@ -1,0 +1,4 @@
+(library
+ (name multipart_form_miou)
+ (public_name multipart_form-miou)
+ (libraries multipart_form miou))
