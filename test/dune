@@ -39,3 +39,20 @@
 ;   (:test test_eio.exe))
 ;  (action
 ;   (run %{test} --color=always)))
+
+(executable
+ (name test_miou)
+ (enabled_if
+  (>= %{ocaml_version} "5.0"))
+ (modules test_miou)
+ (libraries alcotest logs.fmt multipart_form-miou))
+
+(rule
+ (alias runtest)
+ (enabled_if
+  (>= %{ocaml_version} "5.0"))
+ (package multipart_form-miou)
+ (deps
+  (:test test_miou.exe))
+ (action
+  (run %{test} --color=always)))
