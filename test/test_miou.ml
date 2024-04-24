@@ -93,11 +93,9 @@ let test01 =
     match Multipart_form.Content_type.of_string content_type with
     | Ok v -> v
     | Error (`Msg err) -> failwith err in
-  let body = Bounded_stream.create 2 String.empty in
-  Bounded_stream.put body (Some truncated_request01) ;
-  Bounded_stream.put body None ;
+  let body = Bounded_stream.of_list [ truncated_request01 ] in
   let `Parse prm, _ =
-    Multipart_form_miou.stream ~identify:(always ()) ~epsilon:() body
+    Multipart_form_miou.stream ~identify:(always ()) body
       content_type in
   match Miou.await_exn prm with
   | Ok _ -> Alcotest.(check pass) "Truncated request" () ()
@@ -113,11 +111,10 @@ let test02 =
     match Multipart_form.Content_type.of_string content_type with
     | Ok v -> v
     | Error (`Msg err) -> failwith err in
-  let body = Bounded_stream.create 2 String.empty in
-  Bounded_stream.put body (Some truncated_request02) ;
+  let body = Bounded_stream.of_list [ truncated_request02 ] in
   Bounded_stream.put body None ;
   let `Parse prm, _ =
-    Multipart_form_miou.stream ~identify:(always ()) ~epsilon:() body
+    Multipart_form_miou.stream ~identify:(always ()) body
       content_type in
   match Miou.await_exn prm with
   | Ok _ -> Alcotest.fail "Unexpected valid input"

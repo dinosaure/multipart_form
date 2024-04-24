@@ -3,16 +3,16 @@ open Multipart_form
 module Bounded_stream : sig
   type 'a t
 
-  val create : int -> 'a -> 'a t
+  val create : int -> 'a t
   val put : 'a t -> 'a option -> unit
   val get : 'a t -> 'a option
   val iter : ('a -> unit) -> 'a t -> unit
+  val of_list : 'a list -> 'a t
 end
 
 val stream :
   ?bounds:int ->
   identify:(Header.t -> 'id) ->
-  epsilon:'id ->
   string Bounded_stream.t ->
   Content_type.t ->
   [ `Parse of ('id t, [> `Msg of string ]) result Miou.t ]
