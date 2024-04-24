@@ -2,7 +2,7 @@ open Multipart_form
 
 module Bounded_stream = struct
   type 'a t = {
-    buffer : 'a array;
+    buffer : 'a option array;
     mutable rd_pos : int;
     mutable wr_pos : int;
     lock : Miou.Mutex.t;
@@ -11,12 +11,12 @@ module Bounded_stream = struct
     mutable closed : bool;
   }
 
-  let create size v =
+  let create size =
     let lock = Miou.Mutex.create () in
     let non_empty = Miou.Condition.create () in
     let non_full = Miou.Condition.create () in
     {
-      buffer = Array.make size v;
+      buffer = Array.make size None;
       lock;
       rd_pos = 0;
       wr_pos = 0;
@@ -36,7 +36,7 @@ module Bounded_stream = struct
         while (t.wr_pos + 1) mod Array.length t.buffer = t.rd_pos do
           Miou.Condition.wait t.non_full t.lock
         done ;
-        t.buffer.(t.wr_pos) <- data ;
+        t.buffer.(t.wr_pos) <- Some data ;
         t.wr_pos <- (t.wr_pos + 1) mod Array.length t.buffer ;
         Miou.Condition.signal t.non_empty
 
@@ -51,7 +51,7 @@ module Bounded_stream = struct
       let data = t.buffer.(t.rd_pos) in
       t.rd_pos <- (t.rd_pos + 1) mod Array.length t.buffer ;
       Miou.Condition.signal t.non_full ;
-      Some data
+      data
 
   let rec iter fn t =
     match get t with
@@ -60,16 +60,16 @@ module Bounded_stream = struct
         let prm = Miou.call_cc @@ fun () -> fn v in
         Miou.await_exn prm ;
         iter fn t
+
+  let of_list vs =
+    let size = List.length vs + 1 in
+    let stream = create size in
+    List.iter (put stream) (List.map Option.some vs);
+    put stream None; stream
 end
 
-let closed_stream =
-  let stream = Bounded_stream.create 0 String.empty in
-  Bounded_stream.put stream None ;
-  stream
-
-let stream ?(bounds = 10) ~identify ~epsilon stream content_type =
-  let epsilon = (epsilon, Header.of_list [], closed_stream) in
-  let output = Bounded_stream.create bounds epsilon in
+let stream ?(bounds = 10) ~identify stream content_type =
+  let output = Bounded_stream.create bounds in
   let q = Queue.create () in
   let fresh_id =
     let r = Atomic.make 0 in
@@ -84,7 +84,7 @@ let stream ?(bounds = 10) ~identify ~epsilon stream content_type =
     match Queue.pop q with
     | `Id (header, id) ->
         let client_id = identify header in
-        let stream = Bounded_stream.create bounds String.empty in
+        let stream = Bounded_stream.create bounds in
         Hashtbl.add tbl id (client_id, stream) ;
         Bounded_stream.put output (Some (client_id, header, stream)) ;
         go ()
@@ -113,7 +113,7 @@ let of_stream_to_tbl v content_type =
   let identify =
     let id = Atomic.make 0 in
     fun _header -> Atomic.fetch_and_add id 1 in
-  let `Parse prm, parts = stream ~identify ~epsilon:(-1) v content_type in
+  let `Parse prm, parts = stream ~identify v content_type in
   let parts_tbl = Hashtbl.create 0x10 in
   let consume_part (id, _, part_stream) =
     let buf = Buffer.create 0x1000 in
