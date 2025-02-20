@@ -21,4 +21,6 @@ val stream :
 val of_stream_to_list :
   string Bounded_stream.t ->
   Content_type.t ->
-  (int t * (int * string) list, [> `Msg of string ]) result
+  ( (int * Header.t) t * ((int * Header.t) * string) list,
+    [> `Msg of string ] )
+  result

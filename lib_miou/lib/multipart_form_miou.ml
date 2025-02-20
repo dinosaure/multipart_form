@@ -57,15 +57,16 @@ module Bounded_stream = struct
     match get t with
     | None -> ()
     | Some v ->
-        let prm = Miou.call_cc @@ fun () -> fn v in
+        let prm = Miou.async @@ fun () -> fn v in
         Miou.await_exn prm ;
         iter fn t
 
   let of_list vs =
     let size = List.length vs + 1 in
     let stream = create size in
-    List.iter (put stream) (List.map Option.some vs);
-    put stream None; stream
+    List.iter (put stream) (List.map Option.some vs) ;
+    put stream None ;
+    stream
 end
 
 let stream ?(bounds = 10) ~identify stream content_type =
@@ -106,13 +107,13 @@ let stream ?(bounds = 10) ~identify stream content_type =
         | `Fail _ ->
             Bounded_stream.put output None ;
             Error (`Msg "Invalid multipart/form")) in
-  let prm = Miou.call_cc go in
+  let prm = Miou.async go in
   (`Parse prm, output)
 
 let of_stream_to_tbl v content_type =
   let identify =
     let id = Atomic.make 0 in
-    fun _header -> Atomic.fetch_and_add id 1 in
+    fun header -> (Atomic.fetch_and_add id 1, header) in
   let `Parse prm, parts = stream ~identify v content_type in
   let parts_tbl = Hashtbl.create 0x10 in
   let consume_part (id, _, part_stream) =

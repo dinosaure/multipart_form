@@ -95,8 +95,7 @@ let test01 =
     | Error (`Msg err) -> failwith err in
   let body = Bounded_stream.of_list [ truncated_request01 ] in
   let `Parse prm, _ =
-    Multipart_form_miou.stream ~identify:(always ()) body
-      content_type in
+    Multipart_form_miou.stream ~identify:(always ()) body content_type in
   match Miou.await_exn prm with
   | Ok _ -> Alcotest.(check pass) "Truncated request" () ()
   | Error (`Msg err) -> Alcotest.failf "Unexpected error: %s" err
@@ -114,8 +113,7 @@ let test02 =
   let body = Bounded_stream.of_list [ truncated_request02 ] in
   Bounded_stream.put body None ;
   let `Parse prm, _ =
-    Multipart_form_miou.stream ~identify:(always ()) body
-      content_type in
+    Multipart_form_miou.stream ~identify:(always ()) body content_type in
   match Miou.await_exn prm with
   | Ok _ -> Alcotest.fail "Unexpected valid input"
   | Error (`Msg "Invalid multipart/form") ->
