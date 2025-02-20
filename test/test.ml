@@ -29,50 +29,124 @@ let parser ~emitters =
  * echo "<!DOCTYPE html><title>Content of a.html.</title>" > a.html
  * curl -F "text=default" -F "file1=@a.html" -F "file2=@a.txt" localhost:8000 *)
 let simple =
-  {html|Host: localhost:8000|html}^"\r"^{html|
-User-Agent: curl/7.47.0|html}^"\r"^{html|
-Accept: */*|html}^"\r"^{html|
-Content-Length: 489|html}^"\r"^{html|
-Expect: 100-continue|html}^"\r"^{html|
-Content-Type: multipart/form-data; boundary=------------------------eb790219f130e103|html}^"\r"^{html|
-|html}^"\r"^{html|
---------------------------eb790219f130e103|html}^"\r"^{html|
-Content-Disposition: form-data; name="text"|html}^"\r"^{html|
-|html}^"\r"^{html|
-default|html}^"\r"^{html|
---------------------------eb790219f130e103|html}^"\r"^{html|
-Content-Disposition: form-data; name="file1"; filename="a.html"|html}^"\r"^{html|
-Content-Type: text/html|html}^"\r"^{html|
-|html}^"\r"^{html|
+  {html|Host: localhost:8000|html}
+  ^ "\r"
+  ^ {html|
+User-Agent: curl/7.47.0|html}
+  ^ "\r"
+  ^ {html|
+Accept: */*|html}
+  ^ "\r"
+  ^ {html|
+Content-Length: 489|html}
+  ^ "\r"
+  ^ {html|
+Expect: 100-continue|html}
+  ^ "\r"
+  ^ {html|
+Content-Type: multipart/form-data; boundary=------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+Content-Disposition: form-data; name="text"|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
+default|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+Content-Disposition: form-data; name="file1"; filename="a.html"|html}
+  ^ "\r"
+  ^ {html|
+Content-Type: text/html|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
 <!DOCTYPE html><title>Content of a.html.</title>
-|html}^"\r"^{html|
---------------------------eb790219f130e103|html}^"\r"^{html|
-Content-Disposition: form-data; name="file2"; filename="a.txt"|html}^"\r"^{html|
-Content-Type: text/plain|html}^"\r"^{html|
-|html}^"\r"^{html|
+|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+Content-Disposition: form-data; name="file2"; filename="a.txt"|html}
+  ^ "\r"
+  ^ {html|
+Content-Type: text/plain|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
 Content of a.txt.
-|html}^"\r"^{html|
---------------------------eb790219f130e103--|html}^"\r"^{html|
+|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103--|html}
+  ^ "\r"
+  ^ {html|
 |html}
 
 let simple_without_header =
-  {html|--------------------------eb790219f130e103|html}^"\r"^{html|
-Content-Disposition: form-data; name="text"|html}^"\r"^{html|
-|html}^"\r"^{html|
-default|html}^"\r"^{html|
---------------------------eb790219f130e103|html}^"\r"^{html|
-Content-Disposition: form-data; name="file1"; filename="a.html"|html}^"\r"^{html|
-Content-Type: text/html|html}^"\r"^{html|
-|html}^"\r"^{html|
+  {html|--------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+Content-Disposition: form-data; name="text"|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
+default|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+Content-Disposition: form-data; name="file1"; filename="a.html"|html}
+  ^ "\r"
+  ^ {html|
+Content-Type: text/html|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
 <!DOCTYPE html><title>Content of a.html.</title>
-|html}^"\r"^{html|
---------------------------eb790219f130e103|html}^"\r"^{html|
-Content-Disposition: form-data; name="file2"; filename="a.txt"|html}^"\r"^{html|
-Content-Type: text/plain|html}^"\r"^{html|
-|html}^"\r"^{html|
+|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103|html}
+  ^ "\r"
+  ^ {html|
+Content-Disposition: form-data; name="file2"; filename="a.txt"|html}
+  ^ "\r"
+  ^ {html|
+Content-Type: text/plain|html}
+  ^ "\r"
+  ^ {html|
+|html}
+  ^ "\r"
+  ^ {html|
 Content of a.txt.
-|html}^"\r"^{html|
---------------------------eb790219f130e103--|html}^"\r"^{html|
+|html}
+  ^ "\r"
+  ^ {html|
+--------------------------eb790219f130e103--|html}
+  ^ "\r"
+  ^ {html|
 |html}
 
 module Map = Map.Make (String)
@@ -262,22 +336,53 @@ let content_type_2 =
   Rresult.R.get_ok value
 
 let contents =
-  "\r"^{multipart|
------------------------------11410681503802810592492044004|multipart}^"\r"^{multipart|
-Content-Disposition: form-data; name="dream.csrf"|multipart}^"\r"^{multipart|
-|multipart}^"\r"^{multipart|
-foobar|multipart}^"\r"^{multipart|
------------------------------11410681503802810592492044004|multipart}^"\r"^{multipart|
-Content-Disposition: form-data; name="files"; filename="a b.txt"|multipart}^"\r"^{multipart|
-Content-Type: text/plain|multipart}^"\r"^{multipart|
-|multipart}^"\r"^{multipart|
-1234|multipart}^"\r"^{multipart|
------------------------------11410681503802810592492044004|multipart}^"\r"^{multipart|
-Content-Disposition: form-data; name="files"; filename="a b.txt"|multipart}^"\r"^{multipart|
-Content-Type: text/plain|multipart}^"\r"^{multipart|
-|multipart}^"\r"^{multipart|
-4321|multipart}^"\r"^{multipart|
------------------------------11410681503802810592492044004--|multipart}^"\r"^{multipart|
+  "\r"
+  ^ {multipart|
+-----------------------------11410681503802810592492044004|multipart}
+  ^ "\r"
+  ^ {multipart|
+Content-Disposition: form-data; name="dream.csrf"|multipart}
+  ^ "\r"
+  ^ {multipart|
+|multipart}
+  ^ "\r"
+  ^ {multipart|
+foobar|multipart}
+  ^ "\r"
+  ^ {multipart|
+-----------------------------11410681503802810592492044004|multipart}
+  ^ "\r"
+  ^ {multipart|
+Content-Disposition: form-data; name="files"; filename="a b.txt"|multipart}
+  ^ "\r"
+  ^ {multipart|
+Content-Type: text/plain|multipart}
+  ^ "\r"
+  ^ {multipart|
+|multipart}
+  ^ "\r"
+  ^ {multipart|
+1234|multipart}
+  ^ "\r"
+  ^ {multipart|
+-----------------------------11410681503802810592492044004|multipart}
+  ^ "\r"
+  ^ {multipart|
+Content-Disposition: form-data; name="files"; filename="a b.txt"|multipart}
+  ^ "\r"
+  ^ {multipart|
+Content-Type: text/plain|multipart}
+  ^ "\r"
+  ^ {multipart|
+|multipart}
+  ^ "\r"
+  ^ {multipart|
+4321|multipart}
+  ^ "\r"
+  ^ {multipart|
+-----------------------------11410681503802810592492044004--|multipart}
+  ^ "\r"
+  ^ {multipart|
 |multipart}
 
 let filename_with_space =

@@ -208,8 +208,7 @@ module Parameters = struct
       try
         Uutf.String.fold_utf_8
           (fun () _pos -> function
-            | `Malformed _ -> raise Invalid_utf_8
-            | `Uchar _ -> ())
+            | `Malformed _ -> raise Invalid_utf_8 | `Uchar _ -> ())
           () x ;
         Ok x
       with Invalid_utf_8 ->
@@ -278,8 +277,9 @@ module Parameters = struct
     let res = Buffer.create len in
     let pos = ref 0 in
     while !pos < len do
-      if x.[!pos] = '\\' && !pos < len - 1
-         (* XXX(dinosaure): we can avoid this check when [value] takes care about that. *)
+      if
+        x.[!pos] = '\\' && !pos < len - 1
+        (* XXX(dinosaure): we can avoid this check when [value] takes care about that. *)
       then (
         Buffer.add_char res (of_escaped_character x.[!pos + 1]) ;
         pos := !pos + 2)
