@@ -78,9 +78,9 @@ let crlf = char '\r' *> char '\n'
 
 let body_part body =
   Header.Decoder.header >>= fun fields ->
-  (crlf *> return `CRLF <|> return `Nothing <* commit >>= function
-   | `CRLF -> body fields >>| Option.some
-   | `Nothing -> return None)
+  ( crlf *> return `CRLF <|> return `Nothing <* commit >>= function
+    | `CRLF -> body fields >>| Option.some
+    | `Nothing -> return None )
   >>| fun body -> (fields, body)
 
 let encapsulation boundary body =
