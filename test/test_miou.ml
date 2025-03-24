@@ -111,7 +111,7 @@ let test02 =
     | Ok v -> v
     | Error (`Msg err) -> failwith err in
   let body = Bounded_stream.of_list [ truncated_request02 ] in
-  Bounded_stream.put body None ;
+  Bounded_stream.close body ;
   let `Parse prm, _ =
     Multipart_form_miou.stream ~identify:(always ()) body content_type in
   match Miou.await_exn prm with
