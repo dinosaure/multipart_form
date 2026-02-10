@@ -10,11 +10,11 @@
  (libraries fmt fmt.tty logs logs.fmt alcotest alcotest-lwt lwt
    multipart_form multipart_form-lwt))
 
-; (executable
-;  (name test_eio)
-;  (modules test_eio)
-;  (libraries fmt fmt.tty logs logs.fmt alcotest eio_main multipart_form
-;    multipart_form-eio))
+(executable
+ (name test_eio)
+ (modules test_eio)
+ (libraries fmt fmt.tty logs logs.fmt alcotest eio_main multipart_form
+   multipart_form-eio))
 
 (rule
  (alias runtest)
@@ -32,13 +32,13 @@
  (action
   (run %{test} --color=always)))
 
-; (rule
-;  (alias runtest)
-;  (package multipart_form-eio)
-;  (deps
-;   (:test test_eio.exe))
-;  (action
-;   (run %{test} --color=always)))
+(rule
+ (alias runtest)
+ (package multipart_form-eio)
+ (deps
+  (:test test_eio.exe))
+ (action
+  (run %{test} --color=always)))
 
 (executable
  (name test_miou)
