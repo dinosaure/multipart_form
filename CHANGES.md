@@ -1,3 +1,8 @@
+### v0.8.0 2026-02-10 (Paris)
+
+- Upgrade to ocamlformat.0.28.1 (@dinosaure, #46)
+- Fix the eio support (@aktersnurra, @Willenbrink, @dinosaure, #44)
+
 ### v0.7.0 2025-08-12 (Paris)
 
 - Add and improve the Miou support of `multipart_form` (@dinosaure, #41, #43)
